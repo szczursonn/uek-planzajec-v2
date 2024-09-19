@@ -2,6 +2,10 @@
 
 **Wrapper around official [UEK Plan Zajęć](https://planzajec.uek.krakow.pl) with nice new features**
 
+| Desktop                                            | Mobile                                            |
+| -------------------------------------------------- | ------------------------------------------------- |
+| ![Schedule agenda view on desktop](docs/docs1.png) | ![Schedule agenda view on mobile](docs/docs2.jpg) |
+
 ✅ View multiple schedules at once (up to 3, e.g. main group + language groups)  
 ✅ Mark schedules as favorite to come back to them quickly (if you're too stupid to use a bookmark or to just keep a tab open)  
 ✅ Multiple nice looking schedules views  
