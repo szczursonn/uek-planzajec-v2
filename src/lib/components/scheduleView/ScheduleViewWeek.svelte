@@ -144,7 +144,7 @@
             <ul class="flex flex-col gap-2">
                 {#each group.items as item}
                     <li
-                        class={`${item.className} relative flex flex-col rounded-lg border-2 p-3 text-xs sm:p-1.5 sm:text-xxs lg:p-3 lg:text-xs`}
+                        class={`${item.className} relative flex flex-col gap-y-[1px] rounded-lg border-2 p-3 text-xs sm:p-1.5 sm:text-xxs lg:p-3 lg:text-xs`}
                     >
                         <span class="text-sm font-bold sm:break-all sm:text-xs lg:break-normal">
                             {[item.subject, item.type].filter(Boolean).join(' - ')}
@@ -179,11 +179,11 @@
                         {/if}
                         {#if item.room}
                             <span class="flex items-center gap-1">
-                                <SvgIcon
-                                    class="h-3 w-3 sm:h-2 sm:w-2 lg:h-3 lg:w-3"
-                                    iconName="pin"
-                                />
                                 {#if item.roomUrl}
+                                    <SvgIcon
+                                        class="h-3 w-3 sm:h-2 sm:w-2 lg:h-3 lg:w-3"
+                                        iconName="internet"
+                                    />
                                     <a
                                         class="hover:underline"
                                         href={item.roomUrl}
@@ -194,6 +194,10 @@
                                         {item.room}
                                     </a>
                                 {:else}
+                                    <SvgIcon
+                                        class="h-3 w-3 sm:h-2 sm:w-2 lg:h-3 lg:w-3"
+                                        iconName="pin"
+                                    />
                                     <span>{item.room}</span>
                                 {/if}
                             </span>

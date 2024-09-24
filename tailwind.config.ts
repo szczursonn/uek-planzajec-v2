@@ -42,6 +42,9 @@ export default {
             },
             fontSize: {
                 xxs: ['0.5rem', '0.75rem']
+            },
+            screens: {
+                '3xl': '2048px'
             }
         }
     },

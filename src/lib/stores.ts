@@ -131,8 +131,3 @@ export const createScheduleViewStore = (initialScheduleView: ScheduleView) => {
         }
     };
 };
-
-// schedule view order
-// 1. url
-// 2. cookie
-// 3. user agent

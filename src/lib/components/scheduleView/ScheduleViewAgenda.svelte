@@ -198,9 +198,12 @@
                                             </div>
                                         {/if}
                                         {#if item.room}
-                                            <span class="flex items-center gap-0.5 text-xs">
-                                                <SvgIcon class="mb-0.5 h-3 w-3" iconName="pin" />
+                                            <span class="flex items-center gap-1 text-xs">
                                                 {#if item.roomUrl}
+                                                    <SvgIcon
+                                                        class="mb-0.5 h-3 w-3"
+                                                        iconName="internet"
+                                                    />
                                                     <a
                                                         class="hover:underline"
                                                         href={item.roomUrl}
@@ -211,6 +214,10 @@
                                                         {item.room}
                                                     </a>
                                                 {:else}
+                                                    <SvgIcon
+                                                        class="mb-0.5 h-3 w-3"
+                                                        iconName="pin"
+                                                    />
                                                     <span>{item.room}</span>
                                                 {/if}
                                             </span>

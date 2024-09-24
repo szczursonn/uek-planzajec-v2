@@ -33,7 +33,7 @@
         class={`flex min-h-screen flex-col items-center bg-primary font-inter text-primary ${$navigating ? '*:!cursor-progress' : ''}`}
     >
         <PageNavigationProgressBar />
-        <div class="flex w-11/12 flex-col items-center xl:w-5/6 2xl:w-3/4">
+        <div class="3xl:w-3/4 flex w-11/12 flex-col items-center 2xl:w-5/6">
             <header class="mb-4 mt-8">
                 <a
                     class="flex items-center gap-4 transition-colors hover:text-secondary"
