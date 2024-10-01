@@ -149,15 +149,21 @@
                         <span class="text-sm font-bold sm:break-all sm:text-xs lg:break-normal">
                             {[item.subject, item.type].filter(Boolean).join(' - ')}
                         </span>
-                        <span>{item.hourRangeLabel}</span>
+                        <div class="flex items-center gap-1.5">
+                            <SvgIcon
+                                class="h-3 w-3 sm:h-2 sm:w-2 lg:h-3 lg:w-3"
+                                iconName="clock"
+                                ariaHidden
+                            />
+                            <span>{item.hourRangeLabel}</span>
+                        </div>
                         {#if item.lecturers.length > 0}
                             <div class="flex flex-col">
                                 {#each item.lecturers as lecturer}
-                                    <div class="flex flex-wrap items-center gap-1">
-                                        <span>{lecturer.name}</span>
+                                    <div class="flex flex-wrap items-center gap-1.5">
                                         {#if lecturer.moodleId}
                                             <a
-                                                class="h-3 w-4 text-accent hover:underline sm:h-1.5 sm:w-2 lg:h-3 lg:w-4"
+                                                class="w-3 text-accent hover:underline sm:w-2 lg:w-3"
                                                 href={createMoodleURL(lecturer.moodleId)}
                                                 title={m.moodleLinkTitle({
                                                     lecturerName: lecturer.name ?? ''
@@ -172,20 +178,28 @@
                                                     })}
                                                 />
                                             </a>
+                                        {:else}
+                                            <SvgIcon
+                                                class="h-3 w-3 sm:h-2 sm:w-2 lg:h-3 lg:w-3"
+                                                iconName="person"
+                                                ariaHidden
+                                            />
                                         {/if}
+                                        <span class="max-w-[80%]">{lecturer.name}</span>
                                     </div>
                                 {/each}
                             </div>
                         {/if}
                         {#if item.room}
-                            <span class="flex items-center gap-1">
+                            <span class="flex items-center gap-1.5">
                                 {#if item.roomUrl}
                                     <SvgIcon
                                         class="h-3 w-3 sm:h-2 sm:w-2 lg:h-3 lg:w-3"
-                                        iconName="internet"
+                                        iconName="globe"
+                                        ariaHidden
                                     />
                                     <a
-                                        class="hover:underline"
+                                        class="max-w-[80%] hover:underline"
                                         href={item.roomUrl}
                                         title={item.room}
                                         target="_blank"
@@ -197,8 +211,9 @@
                                     <SvgIcon
                                         class="h-3 w-3 sm:h-2 sm:w-2 lg:h-3 lg:w-3"
                                         iconName="pin"
+                                        ariaHidden
                                     />
-                                    <span>{item.room}</span>
+                                    <span class="max-w-[80%]">{item.room}</span>
                                 {/if}
                             </span>
                         {/if}

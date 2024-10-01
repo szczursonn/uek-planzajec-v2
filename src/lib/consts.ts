@@ -66,3 +66,9 @@ export const SCHEDULE_TYPE_ORIGINAL_TO_NORMALIZED: Record<OriginalScheduleType, 
 export const SCHEDULE_TYPE_NORMALIZED_TO_ORIGINAL = Object.fromEntries(
     Object.entries(SCHEDULE_TYPE_ORIGINAL_TO_NORMALIZED).map(([key, value]) => [value, key])
 ) as Record<ScheduleType, OriginalScheduleType>;
+
+export const CACHE_MAX_AGE_SECONDS = {
+    GROUPINGS: 60 * 30, //30m
+    HEADERS: 60 * 30, //30m
+    SCHEDULE: 60 * 10 //10m
+} as const;

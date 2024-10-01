@@ -44,7 +44,7 @@ export const scheduleSchema = z
                     roomUrl: z.string().url().optional(),
                     lecturers: z.array(
                         z.object({
-                            name: z.string().min(1).optional(),
+                            name: z.string().min(1),
                             moodleId: z.string().min(1).optional()
                         })
                     ),

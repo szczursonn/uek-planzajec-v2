@@ -23,6 +23,7 @@ export const initializeGlobalContext = ({
         favoriteSchedules: createFavoriteSchedulesStore(favoriteSchedules)
     });
 
+// TODO: update at the beginning of each minute instead
 const NOW_UPDATE_INTERVAL = 1000 * 60; // 60s
 const createNowStore = (initialNow: Date) => {
     const { subscribe, set } = writable(initialNow);

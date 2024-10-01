@@ -9,17 +9,10 @@ import {
 import type { ScheduleType } from '$lib/types';
 import { createOriginalURL, cutPostfix } from '$lib/utils';
 import { parseLocalizedDate } from '$lib/dateUtils';
-import { SCHEDULE_TYPE_ORIGINAL_TO_NORMALIZED } from '$lib/consts';
+import { SCHEDULE_TYPE_ORIGINAL_TO_NORMALIZED, CACHE_MAX_AGE_SECONDS } from '$lib/consts';
 
 const USER_AGENT =
     'Mozilla/5.0 (compatible; uek-planzajec-v2/1.0; +https://uek-planzajec-v2.pages.dev/)';
-
-// seconds
-const CACHE_MAX_AGE = {
-    GROUPINGS: 60 * 15,
-    HEADERS: 60 * 15,
-    SCHEDULE: 60
-} as const;
 
 const coerceEmptyStringToUndefined = <T>(value: T) =>
     typeof value === 'string' && value.length === 0 ? undefined : value;
@@ -157,7 +150,7 @@ export const getUEKApiClient = (platform?: App.Platform) => {
                 createOriginalURL({
                     xml: true
                 }),
-                CACHE_MAX_AGE.GROUPINGS
+                CACHE_MAX_AGE_SECONDS.GROUPINGS
             )
         )['plan-zajec'].grupowanie;
 
@@ -177,7 +170,7 @@ export const getUEKApiClient = (platform?: App.Platform) => {
                     grouping,
                     xml: true
                 }),
-                CACHE_MAX_AGE.HEADERS
+                CACHE_MAX_AGE_SECONDS.HEADERS
             )
         )['plan-zajec'].zasob;
 
@@ -198,7 +191,7 @@ export const getUEKApiClient = (platform?: App.Platform) => {
                     period,
                     xml: true
                 }),
-                CACHE_MAX_AGE.SCHEDULE
+                CACHE_MAX_AGE_SECONDS.SCHEDULE
             )
         )['plan-zajec'];
 
@@ -250,10 +243,12 @@ export const getUEKApiClient = (platform?: App.Platform) => {
                                           moodleId: xmlSchedule['@_idcel']?.substring(1)
                                       }
                                   ]
-                                : row.nauczyciel?.map((row) => ({
-                                      name: coerceEmptyStringToUndefined(row['#text']),
-                                      moodleId: row['@_moodle']?.substring(1)
-                                  })),
+                                : row.nauczyciel
+                                      ?.filter((row) => row['#text'])
+                                      .map((row) => ({
+                                          name: row['#text'],
+                                          moodleId: row['@_moodle']?.substring(1)
+                                      })),
                         groups:
                             xmlSchedule['@_typ'] === 'G'
                                 ? [xmlSchedule['@_nazwa']]

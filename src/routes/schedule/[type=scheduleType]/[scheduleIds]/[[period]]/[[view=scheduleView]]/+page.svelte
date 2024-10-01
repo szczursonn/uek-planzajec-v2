@@ -7,6 +7,7 @@
     import { i18n } from '$lib/i18n';
     import type { Schedule, ScheduleView } from '$lib/types';
     import {
+        CACHE_MAX_AGE_SECONDS,
         MAX_SELECTABLE_SCHEDULES,
         SCHEDULE_TYPE_TO_LABELS,
         SCHEDULE_VIEWS,
@@ -70,22 +71,39 @@
     );
 
     onMount(() => {
-        let lastVisibleDate = Date.now();
-        const visibilityChangeEventHandler = () => {
-            const currentDate = Date.now();
-            if (
-                document.visibilityState === 'visible' &&
-                currentDate - lastVisibleDate > 1000 * 60 * 5
-            ) {
-                invalidateAll();
+        let lastDataUpdate = Date.now();
+        let dataUpdateTimeout: ReturnType<typeof setTimeout> | undefined;
+
+        const startDataUpdateTimeout = () => {
+            if (!dataUpdateTimeout) {
+                dataUpdateTimeout = setTimeout(
+                    () => {
+                        invalidateAll();
+                        lastDataUpdate = Date.now();
+                    },
+                    Math.max(lastDataUpdate + CACHE_MAX_AGE_SECONDS.SCHEDULE * 1000 - Date.now(), 0)
+                );
             }
-
-            lastVisibleDate = currentDate;
         };
+        const stopDataUpdateTimeout = () => {
+            if (dataUpdateTimeout) {
+                clearTimeout(dataUpdateTimeout);
+                dataUpdateTimeout = undefined;
+            }
+        };
+        startDataUpdateTimeout();
 
+        const visibilityChangeEventHandler = () => {
+            if (document.visibilityState === 'visible') {
+                startDataUpdateTimeout();
+            } else {
+                stopDataUpdateTimeout();
+            }
+        };
         document.addEventListener('visibilitychange', visibilityChangeEventHandler);
         return () => {
             document.removeEventListener('visibilitychange', visibilityChangeEventHandler);
+            stopDataUpdateTimeout();
         };
     });
 </script>
@@ -184,7 +202,7 @@
                         title={currentScheduleTypeLabels.documentTitle()}
                     >
                         <span>{data.headers[0]!.name}</span>
-                        <SvgIcon class="h-5 w-5" iconName="chevronDown" />
+                        <SvgIcon class="h-5 w-5" iconName="chevronDown" ariaHidden />
                     </a>
                     {#if data.type === 'lecturer' && data.headers[0]!.moodleId}
                         {@render moodleButton(data.headers[0]!.name, data.headers[0]!.moodleId)}
@@ -251,12 +269,12 @@
         <form
             action="?/periodAndView"
             method="POST"
-            class="flex min-w-[35%] flex-wrap gap-2 sm:flex-nowrap sm:gap-4"
+            class="flex min-w-[40%] flex-wrap gap-2 sm:flex-nowrap sm:gap-4 2xl:min-w-[35%]"
         >
             <select
                 name={SEARCH_PARAM.SCHEDULE.PERIOD}
                 disabled={!!$navigating}
-                class="w-full cursor-pointer border-b-2 border-b-secondary bg-transparent px-0 py-1.5 text-sm transition-colors hover:border-primary focus:border-primary focus:outline-none sm:py-2.5"
+                class="w-full cursor-pointer border-b-2 border-b-secondary bg-transparent px-0 py-2 text-sm transition-colors hover:border-primary focus:border-primary focus:outline-none sm:py-2.5"
                 onchange={(e) => {
                     e.preventDefault();
 
@@ -284,7 +302,7 @@
             <select
                 name={SEARCH_PARAM.SCHEDULE.VIEW}
                 disabled={!!$navigating}
-                class="w-full cursor-pointer border-b-2 border-b-secondary bg-transparent px-0 py-1.5 text-sm transition-colors hover:border-primary focus:border-primary focus:outline-none sm:py-2.5"
+                class="w-full cursor-pointer border-b-2 border-b-secondary bg-transparent px-0 py-2 text-sm transition-colors hover:border-primary focus:border-primary focus:outline-none sm:py-2.5"
                 onchange={(e) => {
                     e.preventDefault();
 

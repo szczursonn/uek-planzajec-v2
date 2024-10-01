@@ -9,14 +9,12 @@
     import { REPO_URL } from '$lib/consts';
     import { createOriginalURL, createSchedulePickerURL } from '$lib/utils';
     import uekLogo from '$lib/assets/uek_logo.png';
-    import countryPL from '$lib/assets/country_pl.svg';
-    import countryEN from '$lib/assets/country_en.svg';
     import PageNavigationProgressBar from '$lib/components/PageNavigationProgressBar.svelte';
     import SvgIcon from '$lib/components/SvgIcon.svelte';
 
     const LANGUAGE_TAG_TO_ICON = {
-        pl: countryPL,
-        en: countryEN
+        pl: 'langFlagPL',
+        en: 'langFlagEN'
     } as const;
 
     const { children, data } = $props();
@@ -33,7 +31,7 @@
         class={`flex min-h-screen flex-col items-center bg-primary font-inter text-primary ${$navigating ? '*:!cursor-progress' : ''}`}
     >
         <PageNavigationProgressBar />
-        <div class="3xl:w-3/4 flex w-11/12 flex-col items-center 2xl:w-5/6">
+        <div class="flex w-11/12 flex-col items-center 2xl:w-5/6 3xl:w-3/4">
             <header class="mb-4 mt-8">
                 <a
                     class="flex items-center gap-4 transition-colors hover:text-secondary"
@@ -78,17 +76,7 @@
                                 }
                             )}
                         >
-                            <img
-                                class="h-5 w-8"
-                                fetchpriority="low"
-                                src={LANGUAGE_TAG_TO_ICON[lang]}
-                                alt={m.changeLanguageToSelf(
-                                    {},
-                                    {
-                                        languageTag: lang
-                                    }
-                                )}
-                            />
+                            <SvgIcon class="h-5 w-8" iconName={LANGUAGE_TAG_TO_ICON[lang]} />
                         </a>
                     {/each}
                 </div>

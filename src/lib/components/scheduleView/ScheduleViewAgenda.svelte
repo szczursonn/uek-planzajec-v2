@@ -125,7 +125,7 @@
                             class="col-span-3 m-4 flex flex-col items-center md:col-span-2 lg:col-span-1"
                         >
                             <span
-                                class={`text-2xl font-bold sm:text-3xl ${dayGroup.isCurrent ? 'rounded-full bg-gradient-to-t from-blue-500 to-violet-500 p-2.5' : ''}`}
+                                class={`flex h-12 w-12 items-center justify-center text-2xl font-bold sm:text-3xl ${dayGroup.isCurrent ? 'rounded-full bg-gradient-to-t from-blue-500 to-violet-500' : ''}`}
                             >
                                 {dayGroup.dayOfMonth}
                             </span>
@@ -166,43 +166,43 @@
                                                 </span>
                                             {/if}
                                         </div>
-                                        {#if item.lecturers.length > 0}
-                                            <div class="text-xs">
-                                                {#each item.lecturers as lecturer}
-                                                    <div class="flex items-center gap-1">
-                                                        <span>{lecturer.name}</span>
-                                                        {#if lecturer.moodleId}
-                                                            <a
-                                                                class="h-3 w-4 text-accent hover:underline"
-                                                                href={createMoodleURL(
-                                                                    lecturer.moodleId
-                                                                )}
-                                                                title={m.moodleLinkTitle({
-                                                                    lecturerName:
-                                                                        lecturer.name ?? ''
-                                                                })}
-                                                                target="_blank"
-                                                                rel="noopener"
-                                                            >
-                                                                <img
-                                                                    src={moodleLecturerLinkIcon}
-                                                                    alt={m.moodleLinkTitle({
-                                                                        lecturerName:
-                                                                            lecturer.name ?? ''
-                                                                    })}
-                                                                />
-                                                            </a>
-                                                        {/if}
-                                                    </div>
-                                                {/each}
+
+                                        {#each item.lecturers as lecturer}
+                                            <div class="flex items-center gap-1.5 text-xs">
+                                                <SvgIcon
+                                                    iconName="person"
+                                                    class="h-3 w-3"
+                                                    ariaHidden
+                                                />
+                                                <span>{lecturer.name}</span>
+                                                {#if lecturer.moodleId}
+                                                    <a
+                                                        class="h-3 w-4 text-accent hover:underline"
+                                                        href={createMoodleURL(lecturer.moodleId)}
+                                                        title={m.moodleLinkTitle({
+                                                            lecturerName: lecturer.name ?? ''
+                                                        })}
+                                                        target="_blank"
+                                                        rel="noopener"
+                                                    >
+                                                        <img
+                                                            src={moodleLecturerLinkIcon}
+                                                            alt={m.moodleLinkTitle({
+                                                                lecturerName: lecturer.name ?? ''
+                                                            })}
+                                                        />
+                                                    </a>
+                                                {/if}
                                             </div>
-                                        {/if}
+                                        {/each}
+
                                         {#if item.room}
-                                            <span class="flex items-center gap-1 text-xs">
+                                            <span class="flex items-center gap-1.5 text-xs">
                                                 {#if item.roomUrl}
                                                     <SvgIcon
                                                         class="mb-0.5 h-3 w-3"
-                                                        iconName="internet"
+                                                        iconName="globe"
+                                                        ariaHidden
                                                     />
                                                     <a
                                                         class="hover:underline"
@@ -217,6 +217,7 @@
                                                     <SvgIcon
                                                         class="mb-0.5 h-3 w-3"
                                                         iconName="pin"
+                                                        ariaHidden
                                                     />
                                                     <span>{item.room}</span>
                                                 {/if}

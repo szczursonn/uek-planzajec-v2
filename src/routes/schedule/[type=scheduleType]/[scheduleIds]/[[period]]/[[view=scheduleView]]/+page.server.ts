@@ -46,7 +46,7 @@ export const load = async (ctx) => {
                           !(
                               item.type === 'lektorat' &&
                               (item.subject.includes('grupa przedmiotów') ||
-                                  item.subject.includes('Język obcy'))
+                                  item.room === 'Wybierz swoją grupę językową')
                           )
                   )
                 : schedule.items
