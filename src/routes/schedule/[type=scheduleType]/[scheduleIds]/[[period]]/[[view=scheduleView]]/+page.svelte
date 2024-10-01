@@ -21,7 +21,6 @@
         createSchedulePickerURL,
         createScheduleURL
     } from '$lib/utils';
-    import { parseLocalizedDate } from '$lib/dateUtils';
     import { createScheduleViewStore, getFavoriteSchedulesStore } from '$lib/stores';
     import ScheduleViewAgenda from '$lib/components/scheduleView/ScheduleViewAgenda.svelte';
     import ScheduleViewWeek from '$lib/components/scheduleView/ScheduleViewWeek.svelte';
@@ -47,8 +46,8 @@
         data.periods.map((period, i) => ({
             value: i,
             label: periodOptionsDateFormatter.formatRange(
-                parseLocalizedDate(period.from),
-                parseLocalizedDate(period.to)
+                new Date(period.from),
+                new Date(period.to)
             ),
             selected: data.currentPeriodIndex === i
         }))

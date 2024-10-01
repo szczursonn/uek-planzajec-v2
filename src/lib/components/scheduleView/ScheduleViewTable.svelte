@@ -75,7 +75,7 @@
     <tbody class="text-xxs sm:text-xs md:text-sm lg:text-base">
         {#each extendedScheduleItems as item}
             <tr
-                class={`border-b border-b-tiertiary ${item.isCancelled ? 'text-secondary' : ''} ${item.isCurrentDay ? 'bg-accent' : ''} even:bg-secondary`}
+                class={`border-b border-b-tiertiary ${item.isCancelled ? 'text-secondary' : ''} ${item.isCurrentDay ? 'bg-accent' : 'even:bg-secondary'}`}
             >
                 <td class={TABLE_CELL_BASE_CLASS}>
                     {item.dateLabel}

@@ -153,3 +153,5 @@ export const createHourRangeLabelProvider = () => {
             hours: Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 45))
         })})`;
 };
+
+export const prefixNumberWithZero = (n: number) => (n < 10 ? `0${n}` : n);

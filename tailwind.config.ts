@@ -9,7 +9,7 @@ export default {
                 width: 'width'
             },
             fontFamily: {
-                inter: ['Inter', 'sans-serif']
+                inter: ['Inter', 'Segoe UI', 'Tahoma', 'Geneva', 'Verdana', 'sans-serif']
             },
             textColor: {
                 primary: colors.zinc[200],

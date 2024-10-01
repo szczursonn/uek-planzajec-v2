@@ -14,7 +14,6 @@
         eachLocalDayBetween,
         getNextSunday,
         getPreviousMonday,
-        parseLocalizedDate,
         getLocalDateParts
     } from '$lib/dateUtils';
     import SvgIcon from '$lib/components/SvgIcon.svelte';
@@ -62,8 +61,8 @@
             weekday: 'short'
         });
 
-        const periodStartDate = parseLocalizedDate(currentPeriod.from);
-        const periodEndDate = parseLocalizedDate(currentPeriod.to);
+        const periodStartDate = new Date(currentPeriod.from);
+        const periodEndDate = new Date(currentPeriod.to);
 
         const groups: {
             label: string;
@@ -94,7 +93,6 @@
             ) {
                 groups.push({
                     label: groupLabelFormatter.format(date),
-                    // TOOD: probably broken cause currentDate has random unpredictable time, not 00:00 local time, but good enough for now
                     isOutsideOfSelectedPeriod:
                         date.getTime() < periodStartDate.getTime() ||
                         date.getTime() > periodEndDate.getTime(),

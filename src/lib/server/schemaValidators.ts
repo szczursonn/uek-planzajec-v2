@@ -29,8 +29,8 @@ export const scheduleSchema = z
         selectedPeriod: z.number().int().nonnegative(),
         periods: z.array(
             z.object({
-                from: z.string().date(),
-                to: z.string().date()
+                from: z.string().datetime(),
+                to: z.string().datetime()
             })
         ),
         items: z.array(

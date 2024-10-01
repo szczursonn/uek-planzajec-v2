@@ -125,7 +125,7 @@
                             class="col-span-3 m-4 flex flex-col items-center md:col-span-2 lg:col-span-1"
                         >
                             <span
-                                class={`flex h-12 w-12 items-center justify-center text-2xl font-bold sm:text-3xl ${dayGroup.isCurrent ? 'rounded-full bg-gradient-to-t from-blue-500 to-violet-500' : ''}`}
+                                class={`flex h-10 w-10 items-center justify-center text-2xl font-bold sm:h-12 sm:w-12 sm:text-3xl ${dayGroup.isCurrent ? 'rounded-full bg-gradient-to-t from-blue-500 to-violet-500' : ''}`}
                             >
                                 {dayGroup.dayOfMonth}
                             </span>
@@ -224,6 +224,7 @@
                                             </span>
                                         {/if}
                                         {#if item.extra}
+                                            <hr class=" border-secondary" />
                                             <span class="text-error">{item.extra}</span>
                                         {/if}
                                     </div>

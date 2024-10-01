@@ -1,4 +1,5 @@
 import { UEK_TIME_ZONE } from '$lib/consts';
+import { prefixNumberWithZero } from '$lib/utils';
 
 const DATE_LOOP_STEP = 1000 * 60 * 60 * 12; //12h
 const TIME_LOOP_STEP = 1000 * 60 * 15; // 15m
@@ -35,7 +36,7 @@ export const getPreviousMonday = (date: Date) => {
         previousMonday.setTime(previousMonday.getTime() - DATE_LOOP_STEP);
     }
 
-    return previousMonday;
+    return removeLocalTime(previousMonday);
 };
 export const getNextSunday = (date: Date) => {
     const nextSunday = new Date(date);
@@ -44,33 +45,44 @@ export const getNextSunday = (date: Date) => {
         nextSunday.setTime(nextSunday.getTime() + DATE_LOOP_STEP);
     }
 
-    return nextSunday;
+    return removeLocalTime(nextSunday);
 };
 
-const dateCheckFormatter = new Intl.DateTimeFormat('en-US', {
-    timeZone: UEK_TIME_ZONE,
-    year: 'numeric',
-    month: 'numeric',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: 'numeric',
-    hour12: false
-});
-export const getLocalDateParts = (date: Date) => {
-    const parts = dateCheckFormatter.formatToParts(date);
-    return {
-        minute: parseInt(parts[8]!.value),
-        hour: parseInt(parts[6]!.value),
-        day: parseInt(parts[2]!.value),
-        month: parseInt(parts[0]!.value),
-        year: parseInt(parts[4]!.value)
+export const getLocalDateParts = (() => {
+    const datePartsFormatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: UEK_TIME_ZONE,
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        weekday: 'short',
+        hour12: false
+    });
+
+    const partTypeToIndex = datePartsFormatter.formatToParts(new Date(0)).reduce(
+        (map, part, i) => ({
+            ...map,
+            [part.type]: i
+        }),
+        {} as Record<Intl.DateTimeFormatPart['type'], number>
+    );
+
+    return (date: Date) => {
+        const parts = datePartsFormatter.formatToParts(date);
+        return {
+            minute: parseInt(parts[partTypeToIndex.minute]!.value),
+            hour: parseInt(parts[partTypeToIndex.hour]!.value),
+            day: parseInt(parts[partTypeToIndex.day]!.value),
+            month: parseInt(parts[partTypeToIndex.month]!.value),
+            year: parseInt(parts[partTypeToIndex.year]!.value)
+        };
     };
-};
+})();
 
-// TODO: make the dates have 00:00 local time
 export function* eachLocalDayBetween(start: Date, end: Date) {
     const endDateParts = getLocalDateParts(end);
-    const currentDate = new Date(start);
+    let currentDate = new Date(start);
 
     let lastYieldedDateParts: ReturnType<typeof getLocalDateParts> | undefined;
     while (true) {
@@ -82,6 +94,7 @@ export function* eachLocalDayBetween(start: Date, end: Date) {
             lastYieldedDateParts.year !== currentDateParts.year
         ) {
             lastYieldedDateParts = currentDateParts;
+            currentDate = removeLocalTime(currentDate);
             yield currentDate;
         }
 
@@ -97,41 +110,45 @@ export function* eachLocalDayBetween(start: Date, end: Date) {
     }
 }
 
-// Turns localized date + hour strings into an ISO string without timezone
-// 1. Parse date and time as if it was UTC
-// 2. Offset the date by timezone's offset for that date (may be inaccurate if crossing DST boundary)
-// 3. Change the date by 15m at a time to fix the inaccuracy (TZ offsets are in min. 15m increments)
-export const parseLocalizedDate = (date: string, time: string = '00:00') => {
-    const itemDate = new Date(`${date}T${time}:00.000Z`);
+export const getDateFromLocalParts = ({
+    year,
+    month,
+    day,
+    hour = 0,
+    minute = 0
+}: {
+    year: number;
+    month: number;
+    day: number;
+    hour?: number;
+    minute?: number;
+}) => {
+    // Parse the date as if it was UTC
+    const itemDate = new Date(
+        `${year}-${prefixNumberWithZero(month)}-${prefixNumberWithZero(day)}T${prefixNumberWithZero(hour)}:${prefixNumberWithZero(minute)}:00.000Z`
+    );
+
+    // Offset the date by timezone's offset for that date (may be inaccurate if DST boundary has been crossed)
     itemDate.setTime(itemDate.getTime() - getTimezoneOffset(itemDate));
 
-    const [inputYear, inputMonth, inputDay] = date.split('-').map((part) => parseInt(part)) as [
-        number,
-        number,
-        number
-    ];
-    const [inputHour, inputMinute] = time.split(':').map((part) => parseInt(part)) as [
-        number,
-        number
-    ];
-
+    // Change the date a little bit at a time to fix the inaccuracy
     while (true) {
         const currentDateParts = getLocalDateParts(itemDate);
 
         if (
-            currentDateParts.minute < inputMinute ||
-            currentDateParts.hour < inputHour ||
-            currentDateParts.day < inputDay ||
-            currentDateParts.month < inputMonth ||
-            currentDateParts.year < inputYear
+            currentDateParts.minute < minute ||
+            currentDateParts.hour < hour ||
+            currentDateParts.day < day ||
+            currentDateParts.month < month ||
+            currentDateParts.year < year
         ) {
             itemDate.setTime(itemDate.getTime() + TIME_LOOP_STEP);
         } else if (
-            currentDateParts.minute > inputMinute ||
-            currentDateParts.hour > inputHour ||
-            currentDateParts.day > inputDay ||
-            currentDateParts.month > inputMonth ||
-            currentDateParts.year > inputYear
+            currentDateParts.minute > minute ||
+            currentDateParts.hour > hour ||
+            currentDateParts.day > day ||
+            currentDateParts.month > month ||
+            currentDateParts.year > year
         ) {
             itemDate.setTime(itemDate.getTime() - TIME_LOOP_STEP);
         } else {
@@ -140,4 +157,18 @@ export const parseLocalizedDate = (date: string, time: string = '00:00') => {
     }
 
     return itemDate;
+};
+
+const removeLocalTime = (date: Date) => {
+    const localDateParts = getLocalDateParts(date);
+    // optimization: do not call getDateFromLocalParts unnecessarily
+    if (localDateParts.hour !== 0 || localDateParts.minute !== 0) {
+        return getDateFromLocalParts({
+            ...getLocalDateParts(date),
+            hour: 0,
+            minute: 0
+        });
+    }
+
+    return date;
 };

@@ -8,7 +8,7 @@ import {
 } from '$lib/server/schemaValidators';
 import type { ScheduleType } from '$lib/types';
 import { createOriginalURL, cutPostfix } from '$lib/utils';
-import { parseLocalizedDate } from '$lib/dateUtils';
+import { getDateFromLocalParts } from '$lib/dateUtils';
 import { SCHEDULE_TYPE_ORIGINAL_TO_NORMALIZED, CACHE_MAX_AGE_SECONDS } from '$lib/consts';
 
 const USER_AGENT =
@@ -118,6 +118,27 @@ const scheduleXMLSchema = z.object({
     })
 });
 
+const parseUEKDate = (dateString: string, timeString?: string) => {
+    const dateStringParts = dateString.split('-').map((part) => parseInt(part));
+    const timeStringParts = timeString?.split(':').map((part) => parseInt(part)) ?? [];
+
+    if (dateStringParts.length < 3 || !dateStringParts.every((part) => isFinite(part))) {
+        throw new Error(`Invalid date string: ${dateString}`);
+    }
+
+    if (!timeStringParts.every((part) => isFinite(part))) {
+        throw new Error(`Invalid time string: ${timeString}`);
+    }
+
+    return getDateFromLocalParts({
+        year: dateStringParts[0]!,
+        month: dateStringParts[1]!,
+        day: dateStringParts[2]!,
+        hour: timeStringParts[0],
+        minute: timeStringParts[1]
+    });
+};
+
 export const getUEKApiClient = (platform?: App.Platform) => {
     const callUEKApi = async (url: URL, cacheMaxAgeSeconds: number) => {
         let response = await platform?.caches.default.match(url);
@@ -202,8 +223,8 @@ export const getUEKApiClient = (platform?: App.Platform) => {
             moodleId: xmlSchedule['@_idcel']?.substring(1),
             selectedPeriod: xmlSchedule.okres.findIndex((row) => row['@_wybrany'] === 'tak'),
             periods: xmlSchedule.okres.map((row) => ({
-                from: row['@_od'],
-                to: row['@_do']
+                from: parseUEKDate(row['@_od']).toISOString(),
+                to: parseUEKDate(row['@_do']).toISOString()
             })),
             items:
                 xmlSchedule.zajecia?.map((row) => {
@@ -223,11 +244,11 @@ export const getUEKApiClient = (platform?: App.Platform) => {
                     }
 
                     return {
-                        start: parseLocalizedDate(
+                        start: parseUEKDate(
                             row.termin['#text'],
                             row['od-godz']['#text']
                         ).toISOString(),
-                        end: parseLocalizedDate(
+                        end: parseUEKDate(
                             row.termin['#text'],
                             row['do-godz']['#text'].substring(0, 5)
                         ).toISOString(),
