@@ -49,7 +49,7 @@
                 class="my-8 flex w-full flex-col items-center gap-4 border-t border-t-secondary pt-4"
             >
                 <div class="text-center">
-                    <div>{m.footerUnofficialDisclosure()}</div>
+                    <span>{m.footerUnofficialDisclosure()}</span>
                     <a
                         class="font-semibold text-accent hover:underline"
                         href={createOriginalURL().toString()}
@@ -82,7 +82,7 @@
                 </div>
 
                 <a
-                    class="mt-4 opacity-20 transition-opacity hover:opacity-40"
+                    class="mt-4 opacity-30 transition-opacity hover:opacity-45"
                     href={REPO_URL}
                     target="_blank"
                     rel="noopener"
