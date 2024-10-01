@@ -227,6 +227,7 @@
                     name={config.name}
                     bind:value={filters[config.name]}
                     onchange={handleChangeEvent}
+                    title={config.placeholder}
                     class={`w-full grow basis-[51%] cursor-pointer rounded-lg border border-tiertiary bg-primary p-2 text-secondary transition-colors focus:border-accent focus-visible:outline-none has-[option:checked:not([value=""])]:text-primary md:basis-[34%] xl:basis-[21%]`}
                 >
                     {#if config.placeholder}

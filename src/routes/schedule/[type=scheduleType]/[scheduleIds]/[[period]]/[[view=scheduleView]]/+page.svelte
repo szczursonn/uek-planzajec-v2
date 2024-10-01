@@ -271,6 +271,7 @@
             class="flex min-w-[40%] flex-wrap gap-2 sm:flex-nowrap sm:gap-4 2xl:min-w-[35%]"
         >
             <select
+                title={m.scheduleViewPeriodPickerTitle()}
                 name={SEARCH_PARAM.SCHEDULE.PERIOD}
                 disabled={!!$navigating}
                 class="w-full cursor-pointer border-b-2 border-b-secondary bg-transparent px-0 py-2 text-sm transition-colors hover:border-primary focus:border-primary focus:outline-none sm:py-2.5"
@@ -299,6 +300,7 @@
                 {/each}
             </select>
             <select
+                title={m.scheduleViewViewPickerTitle()}
                 name={SEARCH_PARAM.SCHEDULE.VIEW}
                 disabled={!!$navigating}
                 class="w-full cursor-pointer border-b-2 border-b-secondary bg-transparent px-0 py-2 text-sm transition-colors hover:border-primary focus:border-primary focus:outline-none sm:py-2.5"

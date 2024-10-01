@@ -30,6 +30,8 @@
     "scheduleViewAgenda": "Agenda",
     "scheduleViewWeek": "Week",
     "scheduleViewTable": "Table",
+    "scheduleViewPeriodPickerTitle": "Choose period",
+    "scheduleViewViewPickerTitle": "Choose view",
     "scheduleViewTableColumnDate": "Date",
     "scheduleViewTableColumnSubject": "Subject",
     "scheduleViewTableColumnType": "Type",

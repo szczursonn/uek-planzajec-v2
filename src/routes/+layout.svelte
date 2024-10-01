@@ -8,9 +8,9 @@
     import { initializeGlobalContext } from '$lib/stores';
     import { REPO_URL } from '$lib/consts';
     import { createOriginalURL, createSchedulePickerURL } from '$lib/utils';
-    import uekLogo from '$lib/assets/uek_logo.png';
     import PageNavigationProgressBar from '$lib/components/PageNavigationProgressBar.svelte';
     import SvgIcon from '$lib/components/SvgIcon.svelte';
+    import uekLogo from '$lib/assets/uekLogo.svg';
 
     const LANGUAGE_TAG_TO_ICON = {
         pl: 'langFlagPL',
@@ -34,7 +34,7 @@
         <div class="flex w-11/12 flex-col items-center 2xl:w-5/6 3xl:w-3/4">
             <header class="mb-4 mt-8">
                 <a
-                    class="flex items-center gap-4 transition-colors hover:text-secondary"
+                    class="flex items-center gap-4 transition-opacity hover:opacity-80"
                     href={createSchedulePickerURL()}
                     title={m.appTitle()}
                 >

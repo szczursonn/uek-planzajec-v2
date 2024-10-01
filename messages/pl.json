@@ -30,6 +30,8 @@
     "scheduleViewAgenda": "Harmonogram",
     "scheduleViewWeek": "Tydzień",
     "scheduleViewTable": "Tabela",
+    "scheduleViewPeriodPickerTitle": "Wybierz okres",
+    "scheduleViewViewPickerTitle": "Wybierz widok",
     "scheduleViewTableColumnDate": "Termin",
     "scheduleViewTableColumnSubject": "Przedmiot",
     "scheduleViewTableColumnType": "Typ",
