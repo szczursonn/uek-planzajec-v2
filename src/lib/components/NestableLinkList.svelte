@@ -20,6 +20,8 @@
 </script>
 
 <script lang="ts">
+    import NestableLinkList from '$lib/components/NestableLinkList.svelte';
+
     const { optionGroups, nestLevel = 0 }: { optionGroups: OptionGroups; nestLevel?: number } =
         $props();
 </script>
@@ -37,7 +39,7 @@
         {/if}
         {#if optionGroup.groups}
             <li class="mt-2">
-                <svelte:self optionGroups={optionGroup.groups} nestLevel={nestLevel + 1} />
+                <NestableLinkList optionGroups={optionGroup.groups} nestLevel={nestLevel + 1} />
             </li>
         {:else}
             <ul class="my-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
