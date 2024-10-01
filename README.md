@@ -4,7 +4,7 @@
 
 | Desktop                                            | Mobile                                            |
 | -------------------------------------------------- | ------------------------------------------------- |
-| ![Schedule agenda view on desktop](docs/docs1.png) | ![Schedule agenda view on mobile](docs/docs2.jpg) |
+| ![Schedule agenda view on desktop](docs/docs1.png) | ![Schedule agenda view on mobile](docs/docs2.png) |
 
 ✅ View multiple schedules at once (up to 3, e.g. main group + language groups)  
 ✅ Mark schedules as favorite to come back to them quickly (if you're too stupid to use a bookmark or to just keep a tab open)  
