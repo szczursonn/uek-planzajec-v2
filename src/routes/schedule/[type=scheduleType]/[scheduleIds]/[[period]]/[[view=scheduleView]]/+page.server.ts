@@ -39,18 +39,7 @@ export const load = async (ctx) => {
     );
 
     const items = schedules
-        .flatMap((schedule) =>
-            schedule.type === 'group'
-                ? schedule.items.filter(
-                      (item) =>
-                          !(
-                              item.type === 'lektorat' &&
-                              (item.subject.includes('grupa przedmiotów') ||
-                                  item.room === 'Wybierz swoją grupę językową')
-                          )
-                  )
-                : schedule.items
-        )
+        .flatMap((schedule) => schedule.items)
         .sort((a, b) => {
             if (a.start > b.start) {
                 return 1;
@@ -62,6 +51,19 @@ export const load = async (ctx) => {
             return 0;
         })
         .reduce((items, item) => {
+            // 1. Remove duplicates (same schedule item, but from different groups)
+            // 2. Remove language slots
+
+            if (
+                item.type === 'lektorat' &&
+                (item.room === 'Wybierz swoją grupę językową' ||
+                    (item.lecturers.length === 1 &&
+                        item.lecturers[0]!.name === 'Językowe Centrum' &&
+                        !item.room))
+            ) {
+                return items;
+            }
+
             const prev = items.at(-1);
             if (
                 prev &&
