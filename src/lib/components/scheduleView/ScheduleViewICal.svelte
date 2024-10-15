@@ -12,7 +12,7 @@
         <div>
             <span>{header.name}:</span>
             <code class="rounded-md bg-secondary p-1">
-                {`${$page.url.protocol}${$page.url.host}/ical/${scheduleType}/${header.id}`}
+                {`${$page.url.protocol}//${$page.url.host}/ical/${scheduleType}/${header.id}`}
             </code>
         </div>
     {/each}
