@@ -24,8 +24,7 @@
 
 -   PWA
 -   more efficient handling of dates
--   ical to sync with google calendar
 -   export to csv/xlsx
 -   show upcoming classes
 -   fix performance issue on picker if too many links (~300ms lag due to inefficient link translation from paraglidejs)
--   confirmation on add/delete favorite schedule (toast?)
+-   some confirmation on UI when adding/deleting favorite schedule (toast?)

@@ -228,19 +228,24 @@ export const getUEKApiClient = (platform?: App.Platform) => {
             })),
             items:
                 xmlSchedule.zajecia?.map((row) => {
-                    let room: string | undefined;
-                    let roomUrl: string | undefined;
+                    let room: Record<string, unknown> | undefined;
 
                     if (xmlSchedule['@_typ'] === 'S') {
-                        room = xmlSchedule['@_nazwa'];
+                        room = {
+                            name: xmlSchedule['@_nazwa']
+                        };
                     } else if (row.sala?.['#text'].startsWith('<a')) {
                         const anchorTag = anchorTagXMLSchema.parse(
                             xmlParser.parse(row.sala['#text'])
                         ).a;
-                        room = anchorTag['#text'];
-                        roomUrl = anchorTag['@_href'];
-                    } else {
-                        room = row.sala?.['#text'];
+                        room = {
+                            name: anchorTag['#text'],
+                            url: anchorTag['@_href']
+                        };
+                    } else if (row.sala?.['#text']) {
+                        room = {
+                            name: row.sala?.['#text']
+                        };
                     }
 
                     return {
@@ -254,8 +259,7 @@ export const getUEKApiClient = (platform?: App.Platform) => {
                         ).toISOString(),
                         subject: row.przedmiot['#text'],
                         type: row.typ['#text'],
-                        room: coerceEmptyStringToUndefined(room),
-                        roomUrl,
+                        room,
                         lecturers:
                             xmlSchedule['@_typ'] === 'N'
                                 ? [

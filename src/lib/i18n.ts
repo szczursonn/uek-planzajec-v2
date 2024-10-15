@@ -8,7 +8,8 @@ const normalizeLabel = (label: string) =>
     label
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
-        .toLowerCase();
+        .toLowerCase()
+        .replaceAll(' ', '-');
 
 export const i18n = createI18n(runtime, {
     pathnames: Object.entries(SCHEDULE_TYPE_TO_LABELS).reduce(

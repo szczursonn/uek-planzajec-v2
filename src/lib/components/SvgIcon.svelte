@@ -17,7 +17,6 @@
             | 'alert'
             | 'star'
             | 'starOutline'
-            | 'globe'
             | 'clock'
             | 'person'
             | 'langFlagPL'

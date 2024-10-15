@@ -120,21 +120,19 @@
             </div>
             <ul class="divide-y-2 divide-accent">
                 {#each monthGroup.dayGroups as dayGroup}
-                    <li class="grid grid-cols-12">
-                        <div
-                            class="col-span-3 m-4 flex flex-col items-center md:col-span-2 lg:col-span-1"
-                        >
+                    <li class="grid grid-cols-12 gap-x-2">
+                        <div class="col-span-2 m-4 flex flex-col items-center lg:col-span-1">
                             <span
-                                class={`flex h-10 w-10 items-center justify-center text-2xl font-bold sm:h-12 sm:w-12 sm:text-3xl ${dayGroup.isCurrent ? 'rounded-full bg-gradient-to-t from-blue-500 to-violet-500' : ''}`}
+                                class={`flex h-10 w-10 items-center justify-center text-2xl font-bold sm:h-12 sm:w-12 sm:text-3xl${dayGroup.isCurrent ? ' rounded-full bg-gradient-to-t from-blue-500 to-violet-500' : ''}`}
                             >
                                 {dayGroup.dayOfMonth}
                             </span>
                             <span class="text-sm sm:text-base">{dayGroup.dayOfWeek}</span>
                         </div>
-                        <ul class="col-span-9 md:col-span-10 lg:col-span-11">
+                        <ul class="col-span-10 lg:col-span-11">
                             {#each dayGroup.items as item}
                                 <li
-                                    class={`my-4 grid grid-cols-12 items-center sm:items-start ${item.isCancelled ? 'text-secondary' : ''}`}
+                                    class={`my-4 grid grid-cols-12 items-center gap-y-0.5 sm:items-start${item.isCancelled ? ' text-secondary' : ''}`}
                                 >
                                     <span
                                         class="col-span-full flex flex-row items-center gap-2 text-sm lg:col-span-2"
@@ -169,15 +167,9 @@
 
                                         {#each item.lecturers as lecturer}
                                             <div class="flex items-center gap-1.5 text-xs">
-                                                <SvgIcon
-                                                    iconName="person"
-                                                    class="h-3 w-3"
-                                                    ariaHidden
-                                                />
-                                                <span>{lecturer.name}</span>
                                                 {#if lecturer.moodleId}
                                                     <a
-                                                        class="h-3 w-4 text-accent hover:underline"
+                                                        class="h-full w-3 text-accent hover:underline"
                                                         href={createMoodleURL(lecturer.moodleId)}
                                                         title={m.moodleLinkTitle({
                                                             lecturerName: lecturer.name ?? ''
@@ -192,26 +184,28 @@
                                                             })}
                                                         />
                                                     </a>
+                                                {:else}
+                                                    <SvgIcon
+                                                        iconName="person"
+                                                        class="h-3 w-3"
+                                                        ariaHidden
+                                                    />
                                                 {/if}
+                                                <span>{lecturer.name}</span>
                                             </div>
                                         {/each}
 
                                         {#if item.room}
                                             <span class="flex items-center gap-1.5 text-xs">
-                                                {#if item.roomUrl}
-                                                    <SvgIcon
-                                                        class="mb-0.5 h-3 w-3"
-                                                        iconName="globe"
-                                                        ariaHidden
-                                                    />
+                                                {#if item.room.url}
                                                     <a
-                                                        class="hover:underline"
-                                                        href={item.roomUrl}
-                                                        title={item.room}
+                                                        href={item.room.url}
                                                         target="_blank"
                                                         rel="noopener"
+                                                        title={item.room.name}
+                                                        class="mt-2 rounded-lg border border-tiertiary bg-primary px-4 py-2 text-sm transition-colors first-letter:capitalize hover:border-accent hover:underline focus:border-accent focus:underline"
                                                     >
-                                                        {item.room}
+                                                        {item.room.name}
                                                     </a>
                                                 {:else}
                                                     <SvgIcon
@@ -219,7 +213,7 @@
                                                         iconName="pin"
                                                         ariaHidden
                                                     />
-                                                    <span>{item.room}</span>
+                                                    <span>{item.room.name}</span>
                                                 {/if}
                                             </span>
                                         {/if}

@@ -11,7 +11,7 @@
 
 <PageMetadata titleSegments={[$page.error?.message ?? $page.status]} />
 <div
-    class="my-8 flex min-h-64 flex-col items-center justify-center gap-2 rounded-lg bg-error p-4 text-error"
+    class="my-8 flex min-h-64 flex-col items-center justify-center gap-2 rounded-lg bg-error p-4 text-center text-error"
 >
     <SvgIcon class="h-8 w-8" iconName="alert" />
     <span class="font-medium">{unexpectedErrorMessage()}</span>

@@ -23,6 +23,7 @@ export type PickerOption = {
 };
 
 export type ScheduleViewComponentProps = {
+    headers: ScheduleHeader[];
     scheduleItems: ScheduleItem[];
     scheduleType: ScheduleType;
     currentPeriod: Schedule['periods'][number];

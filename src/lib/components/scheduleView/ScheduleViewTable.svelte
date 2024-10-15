@@ -112,18 +112,18 @@
                 {/if}
                 {#if shouldShowColumn.room}
                     <td class={TABLE_CELL_BASE_CLASS}>
-                        {#if item.roomUrl}
+                        {#if item.room?.url}
                             <a
                                 class="text-accent hover:underline"
-                                href={item.roomUrl}
-                                title={item.room}
+                                href={item.room.url}
+                                title={item.room.name}
                                 target="_blank"
                                 rel="noopener"
                             >
-                                {item.room}
+                                {item.room.name}
                             </a>
                         {:else}
-                            {item.room || '-'}
+                            {item.room?.name || '-'}
                         {/if}
                     </td>
                 {/if}

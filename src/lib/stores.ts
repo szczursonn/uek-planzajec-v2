@@ -120,6 +120,7 @@ export const createScheduleViewStore = (initialScheduleView: ScheduleView) => {
         });
     };
 
+    // extend cookie age
     if (browser) {
         updateCookies(initialScheduleView);
     }

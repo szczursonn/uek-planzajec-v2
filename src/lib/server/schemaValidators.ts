@@ -40,8 +40,12 @@ export const scheduleSchema = z
                     end: z.string().datetime(),
                     subject: z.string(),
                     type: z.string().min(1),
-                    room: z.string().min(1).optional(),
-                    roomUrl: z.string().url().optional(),
+                    room: z
+                        .object({
+                            name: z.string().min(1),
+                            url: z.string().url().optional()
+                        })
+                        .optional(),
                     lecturers: z.array(
                         z.object({
                             name: z.string().min(1),

@@ -30,6 +30,7 @@
     "scheduleViewAgenda": "Harmonogram",
     "scheduleViewWeek": "Tydzień",
     "scheduleViewTable": "Tabela",
+    "scheduleViewICal": "Kalendarz Google",
     "scheduleViewPeriodPickerTitle": "Wybierz okres",
     "scheduleViewViewPickerTitle": "Wybierz widok",
     "scheduleViewTableColumnDate": "Termin",
@@ -60,5 +61,8 @@
     "unexpectedErrorMessage": "Wystąpił niespodziewany błąd. Sprawdź czy oficjalny plan zajęć działa poprawnie i odśwież stronę.",
     "officialClassScheduleLinkTitle": "Oficjalny plan zajęć UEK",
     "footerUnofficialDisclosure": "To nie jest oficjalny plan zajęć UEK.",
-    "moodleLinkTitle": "e-Wizytówka: {lecturerName}"
+    "moodleLinkTitle": "e-Wizytówka: {lecturerName}",
+    "useTheseLinksForGoogleCalendar": "Dodaj te adresy do Kalendarza Google lub innego kalendarza wspierającego format ICal",
+    "howToAddToGoogleCalendar": "Jak dodać plany zajęć do Kalendarza Google?",
+    "scheduleChangePeriodHint": "Chcesz zobaczyć resztę planu zajęć? Zmień okres czasu na górze strony (obecnie: {current})"
 }

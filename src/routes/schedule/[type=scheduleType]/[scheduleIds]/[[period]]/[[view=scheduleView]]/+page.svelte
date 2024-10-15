@@ -25,6 +25,7 @@
     import ScheduleViewAgenda from '$lib/components/scheduleView/ScheduleViewAgenda.svelte';
     import ScheduleViewWeek from '$lib/components/scheduleView/ScheduleViewWeek.svelte';
     import ScheduleViewTable from '$lib/components/scheduleView/ScheduleViewTable.svelte';
+    import ScheduleViewICal from '$lib/components/scheduleView/ScheduleViewICal.svelte';
     import SvgIcon from '$lib/components/SvgIcon.svelte';
     import PageMetadata from '$lib/components/PageMetadata.svelte';
     import moodleLecturerLinkIcon from '$lib/assets/moodleLecturerLinkIcon.jpg';
@@ -65,7 +66,8 @@
         {
             agenda: ScheduleViewAgenda,
             week: ScheduleViewWeek,
-            table: ScheduleViewTable
+            table: ScheduleViewTable,
+            ical: ScheduleViewICal
         }[$scheduleViewStore]
     );
 
@@ -341,11 +343,20 @@
 
     {#if data.items.length > 0}
         <CurrentScheduleViewComponent
+            headers={data.headers}
             scheduleItems={data.items}
             scheduleType={data.type}
             currentPeriod={data.periods[data.currentPeriodIndex] as Schedule['periods'][number]}
             isMultipleSchedules={data.headers.length > 1}
         />
+        {#if $scheduleViewStore !== 'ical' && data.currentPeriodIndex === 0}
+            <div class="my-2 flex items-center gap-2">
+                <SvgIcon class="h-7 w-7" iconName="alert" ariaHidden />
+                {m.scheduleChangePeriodHint({
+                    current: periodOptions.find((option) => option.selected)?.label ?? ''
+                })}
+            </div>
+        {/if}
     {:else}
         <div class="my-8 text-center text-lg font-semibold">{m.emptyScheduleMessage()}</div>
     {/if}

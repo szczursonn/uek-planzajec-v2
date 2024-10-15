@@ -28,12 +28,19 @@ export const SCHEDULE_TYPE_TO_LABELS = {
     }
 } as const satisfies Record<ScheduleType, unknown>;
 
-export const SCHEDULE_VIEWS = ['agenda', 'week', 'table'] as const;
-export const DEFAULT_SCHEDULE_VIEW = 'agenda' satisfies ScheduleView;
+export const DEFAULT_SCHEDULE_PERIOD = 0;
+
+export const SCHEDULE_VIEWS = ['agenda', 'week', 'table', 'ical'] as const;
+export const DEFAULT_SCHEDULE_VIEW = {
+    DESKTOP: 'week',
+    MOBILE: 'agenda'
+} as const satisfies Record<string, ScheduleView>;
+
 export const SCHEDULE_VIEW_TO_LABEL = {
     agenda: m.scheduleViewAgenda,
     week: m.scheduleViewWeek,
-    table: m.scheduleViewTable
+    table: m.scheduleViewTable,
+    ical: m.scheduleViewICal
 } as const satisfies Record<ScheduleView, unknown>;
 
 export const COOKIE = {

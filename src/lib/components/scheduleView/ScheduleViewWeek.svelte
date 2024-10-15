@@ -190,20 +190,15 @@
                         {/if}
                         {#if item.room}
                             <span class="flex items-center gap-1.5">
-                                {#if item.roomUrl}
-                                    <SvgIcon
-                                        class="h-3 w-3 sm:h-2 sm:w-2 lg:h-3 lg:w-3"
-                                        iconName="globe"
-                                        ariaHidden
-                                    />
+                                {#if item.room.url}
                                     <a
-                                        class="max-w-[80%] hover:underline"
-                                        href={item.roomUrl}
-                                        title={item.room}
+                                        href={item.room.url}
                                         target="_blank"
                                         rel="noopener"
+                                        title={item.room.name}
+                                        class="mt-2 rounded-lg border border-primary px-4 py-2 text-sm transition-colors first-letter:capitalize hover:underline"
                                     >
-                                        {item.room}
+                                        {item.room.name}
                                     </a>
                                 {:else}
                                     <SvgIcon
@@ -211,7 +206,7 @@
                                         iconName="pin"
                                         ariaHidden
                                     />
-                                    <span class="max-w-[80%]">{item.room}</span>
+                                    <span class="max-w-[80%]">{item.room.name}</span>
                                 {/if}
                             </span>
                         {/if}

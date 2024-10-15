@@ -8,13 +8,13 @@ import {
     scheduleViewSchema
 } from '$lib/server/schemaValidators';
 import {
-    DEFAULT_SCHEDULE_VIEW,
     MAX_SELECTABLE_SCHEDULES,
     COOKIE,
     MAX_COOKIE_AGE,
-    SEARCH_PARAM
+    SEARCH_PARAM,
+    DEFAULT_SCHEDULE_VIEW
 } from '$lib/consts';
-import { createScheduleURL } from '$lib/utils';
+import { createScheduleURL, isScheduleItemLanguageSlot } from '$lib/utils';
 import { i18n } from '$lib/i18n';
 import type { ScheduleItem } from '$lib/types';
 
@@ -54,13 +54,7 @@ export const load = async (ctx) => {
             // 1. Remove duplicates (same schedule item, but from different groups)
             // 2. Remove language slots
 
-            if (
-                item.type === 'lektorat' &&
-                (item.room === 'Wybierz swoją grupę językową' ||
-                    (item.lecturers.length === 1 &&
-                        item.lecturers[0]!.name === 'Językowe Centrum' &&
-                        !item.room))
-            ) {
+            if (isScheduleItemLanguageSlot(item)) {
                 return items;
             }
 
@@ -71,8 +65,8 @@ export const load = async (ctx) => {
                 prev.subject === item.subject &&
                 prev.start === item.start &&
                 prev.end === item.end &&
-                prev.room === item.room &&
-                prev.roomUrl === item.roomUrl &&
+                prev.room?.name === item.room?.name &&
+                prev.room?.url === item.room?.url &&
                 prev.extra === item.extra &&
                 prev.lecturers.length === item.lecturers.length &&
                 prev.lecturers.every(
@@ -102,7 +96,9 @@ export const load = async (ctx) => {
         initialScheduleView:
             parsedParams.view ??
             scheduleViewSchema.safeParse(ctx.cookies.get(COOKIE.SCHEDULE_VIEW)).data ??
-            DEFAULT_SCHEDULE_VIEW
+            (isMobileBasedOnHeaders(ctx.request.headers)
+                ? DEFAULT_SCHEDULE_VIEW.MOBILE
+                : DEFAULT_SCHEDULE_VIEW.DESKTOP)
     };
 };
 
@@ -172,4 +168,18 @@ const handleFavoritesModifyAction = async (
     redirectUrl.search = '';
 
     redirect(303, redirectUrl);
+};
+
+const isMobileBasedOnHeaders = (headers: Headers) => {
+    const secUAMobile = headers.get('Sec-CH-UA-Mobile');
+    if (secUAMobile) {
+        return secUAMobile === '?1';
+    }
+
+    const userAgent = headers.get('User-Agent');
+    if (!userAgent) {
+        return false;
+    }
+
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
 };

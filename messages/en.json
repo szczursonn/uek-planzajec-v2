@@ -30,6 +30,7 @@
     "scheduleViewAgenda": "Agenda",
     "scheduleViewWeek": "Week",
     "scheduleViewTable": "Table",
+    "scheduleViewICal": "Google Calendar",
     "scheduleViewPeriodPickerTitle": "Choose period",
     "scheduleViewViewPickerTitle": "Choose view",
     "scheduleViewTableColumnDate": "Date",
@@ -60,5 +61,8 @@
     "unexpectedErrorMessage": "There was an unexpected error. Check if the official class schedule is working properly and refresh the page.",
     "officialClassScheduleLinkTitle": "Official UEK class schedule",
     "footerUnofficialDisclosure": "This is not the official UEK class schedule.",
-    "moodleLinkTitle": "e-Wizytówka: {lecturerName}"
+    "moodleLinkTitle": "e-Wizytówka: {lecturerName}",
+    "useTheseLinksForGoogleCalendar": "Add these links to Google Calendar or other calendar supporting the ICal format",
+    "howToAddToGoogleCalendar": "How to add the schedules to Google Calendar?",
+    "scheduleChangePeriodHint": "Do you want to see the rest of the schedule? Change the schedule period on the top of the page (current: {current})"
 }

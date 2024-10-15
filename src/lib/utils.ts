@@ -2,6 +2,7 @@ import { languageTag } from '$lib/paraglide/runtime';
 import * as m from '$lib/paraglide/messages';
 import type { PickerState, ScheduleItem, ScheduleType, ScheduleView } from '$lib/types';
 import {
+    DEFAULT_SCHEDULE_PERIOD,
     DEFAULT_SCHEDULE_TYPE,
     SCHEDULE_TYPE_NORMALIZED_TO_ORIGINAL,
     SEARCH_PARAM,
@@ -47,7 +48,7 @@ export const createSchedulePickerURL = ({
 export const createScheduleURL = ({
     scheduleType,
     ids,
-    period = 0,
+    period = DEFAULT_SCHEDULE_PERIOD,
     scheduleView
 }: {
     scheduleType: ScheduleType;
@@ -57,7 +58,7 @@ export const createScheduleURL = ({
 }) => {
     let url = `/schedule/${encodeURIComponent(scheduleType)}/${encodeURIComponent(ids.join('_'))}`;
 
-    if (period !== 0 || scheduleView) {
+    if (period !== DEFAULT_SCHEDULE_PERIOD || scheduleView) {
         url += `/${period}`;
 
         if (scheduleView) {
@@ -110,6 +111,12 @@ export const createOriginalURL = ({
 };
 
 export const isScheduleItemCancelled = (item: ScheduleItem) => item.type === 'Przeniesienie zajęć';
+export const isScheduleItemLanguageSlot = (item: ScheduleItem) =>
+    item.type === 'lektorat' &&
+    (item.room?.name === 'Wybierz swoją grupę językową' ||
+        (item.lecturers.length === 1 &&
+            item.lecturers[0]!.name === 'Językowe Centrum' &&
+            !item.room));
 
 export const createScheduleItemTypeClassProvider = (
     classes: Partial<
