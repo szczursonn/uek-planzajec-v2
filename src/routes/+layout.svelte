@@ -25,6 +25,7 @@
     <meta property="og:site_name" content={m.appTitle()} />
     <meta property="og:type" content="website" />
     <link rel="author" href="https://github.com/szczursonn" />
+    <link rel="manifest" href={`/manifest-${languageTag()}.webmanifest`} />
 </svelte:head>
 <ParaglideJS {i18n}>
     <div
