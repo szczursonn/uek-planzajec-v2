@@ -5,8 +5,8 @@ import fs from 'node:fs/promises';
 
 // Importing from ./paraglide causes vite dev server to explode, so must do this shit
 // an API route the serves the manifest would be 100x better and easier to make but a vite plugin is cooler
-const getWebManifest = async (messagesFilePath: string) => {
-    const buff = await fs.readFile(messagesFilePath);
+const getWebManifest = async (messagesDirPath: string, languageTag: string) => {
+    const buff = await fs.readFile(path.resolve(messagesDirPath, `${languageTag}.json`));
     const messages = z
         .object({
             appTitle: z.string(),
@@ -18,11 +18,11 @@ const getWebManifest = async (messagesFilePath: string) => {
         name: messages.appTitle,
         short_name: messages.appTitle,
         description: messages.metaPageDescriptionPicker,
-        start_url: '/pwa-entry',
+        start_url: languageTag === 'pl' ? '/pwa-entry' : `/${languageTag}/pwa-entry`,
         id: 'uek-planzajec-v2',
         display: 'standalone',
         background_color: '#09090b',
-        theme_color: '#3b82f6',
+        theme_color: '#09090b',
         icons: [
             {
                 src: '/icon-192x192.png',
@@ -68,7 +68,7 @@ export const webManifestPlugin = (rootDirPath: string): PluginOption => {
 
                     await fs.writeFile(
                         path.resolve(staticDirPath, `manifest-${languageTag}.webmanifest`),
-                        await getWebManifest(path.resolve(messagesDirPath, fileName)),
+                        await getWebManifest(messagesDirPath, languageTag),
                         'utf-8'
                     );
                 })
@@ -83,9 +83,7 @@ export const webManifestPlugin = (rootDirPath: string): PluginOption => {
                 }
 
                 try {
-                    const webmanifestJSON = await getWebManifest(
-                        path.resolve(messagesDirPath, `${languageTag}.json`)
-                    );
+                    const webmanifestJSON = await getWebManifest(messagesDirPath, languageTag);
 
                     res.writeHead(200, {
                         'Content-Type': 'application/json'

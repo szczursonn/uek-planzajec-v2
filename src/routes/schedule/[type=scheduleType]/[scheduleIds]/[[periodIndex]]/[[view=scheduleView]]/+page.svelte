@@ -104,7 +104,7 @@
         <div class="flex flex-col flex-wrap gap-1 sm:flex-row sm:gap-2 lg:flex-nowrap lg:gap-4">
             {#each data.headers as header}
                 <div class="flex flex-wrap items-center">
-                    <span class="text-lg font-bold sm:text-2xl md:text-3xl">{header.name}</span>
+                    <span class="text-lg font-bold md:text-2xl 2xl:text-3xl">{header.name}</span>
                     {#if header.moodleId}
                         <a
                             class="ml-2.5 text-accent hover:underline"
@@ -245,7 +245,7 @@
     <form
         action="?/setPeriodAndView"
         method="POST"
-        class="flex min-w-[40%] flex-wrap gap-2 sm:flex-nowrap sm:gap-4 2xl:min-w-[35%]"
+        class="flex min-w-[25%] flex-wrap gap-2 sm:flex-nowrap sm:gap-4 2xl:min-w-[30%] 3xl:min-w-[35%]"
     >
         <Select
             name={SEARCH_PARAM.SCHEDULE.PERIOD}

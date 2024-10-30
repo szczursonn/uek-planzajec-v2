@@ -1,5 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import { readSavedScheduleSetsCookie } from '$lib/server/serverUtils';
+import { i18n } from '$lib/i18n';
 import { createScheduleURL } from '$lib/linkUtils';
 import type { ScheduleType } from '$lib/types';
 
@@ -9,13 +10,15 @@ export const GET = (ctx) => {
 
     redirect(
         303,
-        scheduleType
-            ? createScheduleURL({
-                  scheduleIds: savedScheduleSets[scheduleType]![0]!.map(
-                      (scheduleHeader) => scheduleHeader.id
-                  ),
-                  scheduleType
-              })
-            : '/'
+        i18n.resolveRoute(
+            scheduleType
+                ? createScheduleURL({
+                      scheduleIds: savedScheduleSets[scheduleType]![0]!.map(
+                          (scheduleHeader) => scheduleHeader.id
+                      ),
+                      scheduleType
+                  })
+                : '/'
+        )
     );
 };
