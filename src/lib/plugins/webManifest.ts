@@ -1,15 +1,12 @@
 import type { PluginOption } from 'vite';
+import { z } from 'zod';
 import path from 'node:path';
 import fs from 'node:fs/promises';
-import { z } from 'zod';
-
-const staticDirPath = path.resolve(__dirname, '../../static');
-const messagesDirPath = path.resolve(__dirname, '../../messages');
 
 // Importing from ./paraglide causes vite dev server to explode, so must do this shit
-// an API route the serves the manifest would be 100x better but a vite plugin is cooler
-const getWebManifest = async (languageTag: string) => {
-    const buff = await fs.readFile(path.resolve(messagesDirPath, `${languageTag}.json`));
+// an API route the serves the manifest would be 100x better and easier to make but a vite plugin is cooler
+const getWebManifest = async (messagesFilePath: string) => {
+    const buff = await fs.readFile(messagesFilePath);
     const messages = z
         .object({
             appTitle: z.string(),
@@ -21,7 +18,8 @@ const getWebManifest = async (languageTag: string) => {
         name: messages.appTitle,
         short_name: messages.appTitle,
         description: messages.metaPageDescriptionPicker,
-        start_url: '/',
+        start_url: '/pwa-entry',
+        id: 'uek-planzajec-v2',
         display: 'standalone',
         background_color: '#09090b',
         theme_color: '#3b82f6',
@@ -40,7 +38,10 @@ const getWebManifest = async (languageTag: string) => {
     });
 };
 
-export const webManifestPlugin = (): PluginOption => {
+export const webManifestPlugin = (rootDirPath: string): PluginOption => {
+    const staticDirPath = path.resolve(rootDirPath, 'static');
+    const messagesDirPath = path.resolve(rootDirPath, 'messages');
+
     return {
         name: 'generate-webmanifests',
         async buildEnd() {
@@ -67,7 +68,7 @@ export const webManifestPlugin = (): PluginOption => {
 
                     await fs.writeFile(
                         path.resolve(staticDirPath, `manifest-${languageTag}.webmanifest`),
-                        await getWebManifest(languageTag),
+                        await getWebManifest(path.resolve(messagesDirPath, fileName)),
                         'utf-8'
                     );
                 })
@@ -82,7 +83,9 @@ export const webManifestPlugin = (): PluginOption => {
                 }
 
                 try {
-                    const webmanifestJSON = await getWebManifest(languageTag);
+                    const webmanifestJSON = await getWebManifest(
+                        path.resolve(messagesDirPath, `${languageTag}.json`)
+                    );
 
                     res.writeHead(200, {
                         'Content-Type': 'application/json'

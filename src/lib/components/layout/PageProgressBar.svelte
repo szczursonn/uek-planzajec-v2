@@ -38,7 +38,7 @@
     aria-valuenow={progress}
 >
     <div
-        class="h-1 rounded-r-full bg-accent transition-width duration-500"
+        class="bg-accent-default h-1 rounded-r-full transition-width duration-500"
         style={`width: ${progress}%`}
     ></div>
 </div>

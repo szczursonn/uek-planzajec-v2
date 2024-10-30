@@ -1,4 +1,4 @@
-<script lang="ts" context="module">
+<script lang="ts" module>
     export type Options = { label: string; href: string }[];
     export type OptionGroups = ({ label: string } & (
         | {
@@ -47,7 +47,7 @@
                     {#each optionGroup.options as option}
                         <li>
                             <a
-                                class="block h-full border-b-2 border-b-secondary px-2 py-4 text-sm font-semibold transition-colors hover:border-b-accent hover:bg-secondary"
+                                class="block h-full border-b-2 border-b-secondary px-2 py-4 text-sm font-semibold transition-colors hover:border-b-accent-default hover:bg-secondary"
                                 title={option.label}
                                 href={option.href}
                             >

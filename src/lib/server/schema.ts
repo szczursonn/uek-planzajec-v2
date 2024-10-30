@@ -1,32 +1,35 @@
 import { z } from 'zod';
-import { MAX_SELECTABLE_SCHEDULES, SCHEDULE_TYPES, SCHEDULE_VIEWS } from '$lib/consts';
+import {
+    MAX_SAVED_SCHEDULE_SETS,
+    MAX_SELECTABLE_SCHEDULES,
+    SCHEDULE_TYPES,
+    SCHEDULE_VIEWS
+} from '$lib/consts';
 
 export const scheduleTypeSchema = z.enum(SCHEDULE_TYPES);
 export const originalScheduleTypeSchema = z.enum(['G', 'N', 'S']);
 
+export const scheduleIdSchema = z.string().min(1).regex(/^\d+$/);
+export const scheduleNameSchema = z.string().min(1);
+export const scheduleSelectedPeriodSchema = z.number().int().nonnegative();
+
 export const scheduleGroupingSchema = z.object({
-    name: z.string().min(1),
+    name: scheduleNameSchema,
     type: scheduleTypeSchema
 });
 
 export const scheduleHeaderSchema = z.object({
-    id: z.string().min(1),
-    name: z.string().min(1)
+    id: scheduleIdSchema,
+    name: scheduleNameSchema
 });
-
-export const favoriteScheduleSchema = scheduleHeaderSchema.extend({
-    type: scheduleTypeSchema
-});
-
-export const favoriteScheduleArraySchema = z.array(favoriteScheduleSchema);
 
 export const scheduleSchema = z
     .object({
-        id: z.string().min(1),
+        id: scheduleIdSchema,
         type: scheduleTypeSchema,
-        name: z.string().min(1),
+        name: scheduleNameSchema,
         moodleId: z.optional(z.string().min(1)),
-        selectedPeriod: z.number().int().nonnegative(),
+        selectedPeriod: scheduleSelectedPeriodSchema,
         periods: z.array(
             z.object({
                 from: z.string().datetime(),
@@ -66,18 +69,19 @@ export const scheduleSchema = z
 export const scheduleViewSchema = z.enum(SCHEDULE_VIEWS);
 
 export const pickerStateSchema = z.object({
-    period: z.number().nonnegative(),
-    ids: z.array(z.string().min(1)).min(1).max(MAX_SELECTABLE_SCHEDULES)
+    periodIndex: scheduleSelectedPeriodSchema,
+    scheduleIds: z.array(scheduleIdSchema).min(1).max(MAX_SELECTABLE_SCHEDULES)
 });
-export const parsePickerState = (value: unknown) => {
-    if (typeof value !== 'string') {
-        return;
-    }
 
-    try {
-        return pickerStateSchema.parse(JSON.parse(atob(value)));
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (_) {
-        return;
-    }
-};
+export const savedScheduleSetsSchema = z.record(
+    scheduleTypeSchema,
+    z
+        .array(z.array(scheduleHeaderSchema).min(1).max(MAX_SELECTABLE_SCHEDULES))
+        .min(1)
+        .max(MAX_SAVED_SCHEDULE_SETS)
+);
+
+export const cookieConsentStateSchema = z.object({
+    version: z.number().int().nonnegative(),
+    forceShowNotice: z.boolean()
+});

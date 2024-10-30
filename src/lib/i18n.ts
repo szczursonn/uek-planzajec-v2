@@ -9,7 +9,9 @@ const normalizeLabel = (label: string) =>
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
         .toLowerCase()
-        .replaceAll(' ', '-');
+        .replaceAll('(', '')
+        .replaceAll(/[()]/g, '')
+        .replaceAll(/\s/g, '-');
 
 export const i18n = createI18n(runtime, {
     pathnames: Object.entries(SCHEDULE_TYPE_TO_LABELS).reduce(
@@ -24,16 +26,16 @@ export const i18n = createI18n(runtime, {
             ...Object.entries(SCHEDULE_VIEW_TO_LABEL).reduce(
                 (acc2, [scheduleView, scheduleViewLabel]) => ({
                     ...acc2,
-                    [`/schedule/${scheduleType}/[scheduleIds]/[[period]]/${scheduleView}`]: (
+                    [`/schedule/${scheduleType}/[scheduleIds]/[[periodIndex]]/${scheduleView}`]: (
                         ...args: Parameters<
                             typeof scheduleTypeLabel | typeof scheduleViewLabel | typeof m.schedule
                         >
                     ) =>
-                        `/${normalizeLabel(m.schedule(...args))}/${normalizeLabel(scheduleTypeLabel(...args))}/[scheduleIds]/[[period]]/${normalizeLabel(scheduleViewLabel(...args))}`,
-                    [`/schedule/${scheduleType}/[scheduleIds]/[[period]]`]: (
+                        `/${normalizeLabel(m.schedule(...args))}/${normalizeLabel(scheduleTypeLabel(...args))}/[scheduleIds]/[[periodIndex]]/${normalizeLabel(scheduleViewLabel(...args))}`,
+                    [`/schedule/${scheduleType}/[scheduleIds]/[[periodIndex]]`]: (
                         ...args: Parameters<typeof scheduleTypeLabel | typeof m.schedule>
                     ) =>
-                        `/${normalizeLabel(m.schedule(...args))}/${normalizeLabel(scheduleTypeLabel(...args))}/[scheduleIds]/[[period]]`,
+                        `/${normalizeLabel(m.schedule(...args))}/${normalizeLabel(scheduleTypeLabel(...args))}/[scheduleIds]/[[periodIndex]]`,
                     [`/schedule/${scheduleType}/[scheduleIds]`]: (
                         ...args: Parameters<typeof scheduleTypeLabel>
                     ) =>

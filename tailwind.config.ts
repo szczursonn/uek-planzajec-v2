@@ -18,9 +18,9 @@ export default {
                 error: colors.red[300],
                 warn: colors.yellow[300],
                 accent: colors.blue[400],
-                favorite: {
-                    default: colors.yellow[400],
-                    hover: colors.yellow[300]
+                bookmark: {
+                    default: colors.rose[500],
+                    hover: colors.rose[400]
                 }
             },
             backgroundColor: {
@@ -29,15 +29,25 @@ export default {
                 tertiary: colors.zinc[600],
                 error: colors.red[900],
                 warn: colors.yellow[800],
-                accent: colors.blue[500]
+                accent: {
+                    default: colors.blue[500],
+                    highlight: colors.blue[600],
+                    muted: colors.blue[900]
+                }
             },
             borderColor: {
                 primary: colors.zinc[100],
                 secondary: colors.zinc[500],
-                tiertiary: colors.zinc[700],
-                accent: colors.blue[500]
+                tertiary: colors.zinc[700],
+                accent: {
+                    default: colors.blue[500],
+                    highlight: colors.blue[600]
+                }
             },
             boxShadowColor: {
+                accent: colors.blue[500]
+            },
+            fill: {
                 accent: colors.blue[500]
             },
             fontSize: {

@@ -3,19 +3,23 @@
     import * as m from '$lib/paraglide/messages';
     import type { ScheduleViewComponentProps } from '$lib/types';
     import { UEK_TIME_ZONE } from '$lib/consts';
-    import { createMoodleURL, isScheduleItemCancelled } from '$lib/utils';
     import { getLocalDateParts } from '$lib/dateUtils';
-    import { now } from '$lib/stores';
+    import { createMoodleURL } from '$lib/linkUtils';
     import moodleLecturerLinkIcon from '$lib/assets/moodleLecturerLinkIcon.jpg';
+    import { getGlobalContext } from '$lib/stores/globalContext';
+    import Icon from '$lib/components/Icon.svelte';
+
+    const { nowStore } = getGlobalContext();
 
     const TABLE_HEAD_CELL_CLASS = 'p-1 sm:p-2';
     const TABLE_CELL_BASE_CLASS = 'max-w-96 p-1 sm:p-2';
 
-    const { scheduleType, scheduleItems, isMultipleSchedules }: ScheduleViewComponentProps =
-        $props();
+    const { headers, scheduleType, scheduleItems }: ScheduleViewComponentProps = $props();
+
+    const isMultipleSchedules = $derived(headers.length > 1);
 
     const extendedScheduleItems = $derived.by(() => {
-        const currentDateParts = getLocalDateParts($now);
+        const currentDateParts = getLocalDateParts($nowStore);
         const itemDateFormatter = new Intl.DateTimeFormat(languageTag(), {
             timeZone: UEK_TIME_ZONE,
             day: 'numeric',
@@ -27,13 +31,11 @@
         });
 
         return scheduleItems.map((item) => {
-            const itemStartDate = new Date(item.start);
-            const itemStartDateParts = getLocalDateParts(itemStartDate);
+            const itemStartDateParts = getLocalDateParts(item.startDate);
 
             return {
                 ...item,
-                isCancelled: isScheduleItemCancelled(item),
-                dateLabel: itemDateFormatter.formatRange(itemStartDate, new Date(item.end)),
+                dateLabel: itemDateFormatter.formatRange(item.startDate, item.endDate),
                 isCurrentDay:
                     currentDateParts.day === itemStartDateParts.day &&
                     currentDateParts.month === itemStartDateParts.month &&
@@ -55,17 +57,34 @@
         class="border-b-2 border-b-secondary text-xxs font-bold text-secondary sm:text-base md:text-lg"
     >
         <tr>
-            <th class={TABLE_HEAD_CELL_CLASS}>{m.scheduleViewTableColumnDate()}</th>
+            <th class={TABLE_HEAD_CELL_CLASS}>
+                <div class="flex items-center gap-1.5">
+                    <Icon class="max-h-4 max-w-4" iconName="clock" ariaHidden />
+                    <span>{m.scheduleViewTableColumnDate()}</span>
+                </div>
+            </th>
             <th class={TABLE_HEAD_CELL_CLASS}>{m.scheduleViewTableColumnSubject()}</th>
             <th class={TABLE_HEAD_CELL_CLASS}>{m.scheduleViewTableColumnType()}</th>
             {#if shouldShowColumn.group}
                 <th class={TABLE_HEAD_CELL_CLASS}>{m.scheduleViewTableColumnGroup()}</th>
             {/if}
             {#if shouldShowColumn.lecturer}
-                <th class={TABLE_HEAD_CELL_CLASS}>{m.scheduleViewTableColumnLecturer()}</th>
+                <th class={TABLE_HEAD_CELL_CLASS}>
+                    <div class="flex items-center gap-1.5">
+                        <Icon class="max-h-4 max-w-4" iconName="person" ariaHidden />
+                        <span>{m.scheduleViewTableColumnLecturer()}</span>
+                    </div>
+                </th>
             {/if}
             {#if shouldShowColumn.room}
-                <th class={TABLE_HEAD_CELL_CLASS}>{m.scheduleViewTableColumnRoom()}</th>
+                <th class={TABLE_HEAD_CELL_CLASS}>
+                    <div class="flex items-center gap-1.5">
+                        <Icon class="max-h-4 max-w-4" iconName="pin" ariaHidden />
+                        <span>
+                            {m.scheduleViewTableColumnRoom()}
+                        </span>
+                    </div>
+                </th>
             {/if}
             {#if shouldShowColumn.extra}
                 <th class={TABLE_HEAD_CELL_CLASS}>{m.scheduleViewTableColumnExtra()}</th>
@@ -75,7 +94,7 @@
     <tbody class="text-xxs sm:text-xs md:text-sm lg:text-base">
         {#each extendedScheduleItems as item}
             <tr
-                class={`border-b border-b-tiertiary ${item.isCancelled ? 'text-secondary' : ''} ${item.isCurrentDay ? 'bg-accent' : 'even:bg-secondary'}`}
+                class={`${item.isCancelled || item.isFinished ? ' text-secondary' : ''}${item.isCurrentDay ? ' bg-accent-muted' : ''}${item.isInProgress ? ' border-2 border-accent-highlight' : ' border-b-tertiary border-b'}`}
             >
                 <td class={TABLE_CELL_BASE_CLASS}>
                     {item.dateLabel}

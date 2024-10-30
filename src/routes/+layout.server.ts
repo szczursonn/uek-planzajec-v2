@@ -1,11 +1,28 @@
-import { favoriteScheduleArraySchema } from '$lib/server/schemaValidators';
-import { COOKIE } from '$lib/consts';
+import {
+    isMobileBasedOnRequestHeaders,
+    readCookieConsentStateCookie,
+    readPreferredScheduleViewCookie,
+    readSavedScheduleSetsCookie
+} from '$lib/server/serverUtils';
+import { COOKIE, COOKIE_CONFIG, DEFAULT_SCHEDULE_VIEW } from '$lib/consts';
 
 export const load = async (ctx) => {
+    // refresh expiration date of all existing cookies
+    for (const cookieName of Object.values(COOKIE)) {
+        const cookieValue = ctx.cookies.get(cookieName);
+        if (cookieValue) {
+            ctx.cookies.set(cookieName, cookieValue, COOKIE_CONFIG);
+        }
+    }
+
     return {
-        now: new Date().getTime(),
-        favoriteSchedules: favoriteScheduleArraySchema.parse(
-            JSON.parse(ctx.cookies.get(COOKIE.FAVORITES) ?? '[]')
-        )
+        initialNowAsNumber: new Date().getTime(),
+        initialCookieConsentState: readCookieConsentStateCookie(ctx),
+        initialSavedScheduleSets: readSavedScheduleSetsCookie(ctx),
+        initialPreferredScheduleView:
+            readPreferredScheduleViewCookie(ctx) ??
+            (isMobileBasedOnRequestHeaders(ctx)
+                ? DEFAULT_SCHEDULE_VIEW.MOBILE
+                : DEFAULT_SCHEDULE_VIEW.DESKTOP)
     };
 };

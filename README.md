@@ -7,24 +7,33 @@
 | ![Schedule agenda view on desktop](docs/docs1.png) | ![Schedule agenda view on mobile](docs/docs2.png) |
 
 ✅ View multiple schedules at once (up to 3, e.g. main group + language groups)  
-✅ Mark schedules as favorite to come back to them quickly (if you're too stupid to use a bookmark or to just keep a tab open)  
+✅ Save sets of schedules to come back to them quickly (if just keeping a tab open or making a bookmark in the browser is too hard for you)  
 ✅ Multiple nice looking schedules views  
-✅ 100% functionality without JS  
-✅ Multiple languages (pl/en) with internationalised paths  
+✅ 100% of functionality works without JS
+✅ Works without cookie consent
+✅ Multiple languages (pl/en) with internationalised urls  
 ✅ Caching on Cloudflare for performance (+to avoid ddosing UEK)
 
 [V1](https://github.com/szczursonn/uek-planzajec) with NextJS Page Router
 
-## Cloudflare Pages Config
+## Technical details
+
+### Cloudflare Pages Config
+
+These are required for the build to succeed
 
 1. Bump node version to at least 20
 2. Enable compatibility flag on project: nodejs_compat_v2
 
+### Cookies
+
+Read and parsed only on server, passed to client in `+layout.server.ts` to avoid bundling zod
+
 ## TODO / potential improvements
 
--   PWA
--   more efficient handling of dates
--   export to csv/xlsx
--   show upcoming classes
+-   show upcoming classes on schedule view (like class X starts in 20min)
+-   add shallow navigation when changing schedule view
 -   fix performance issue on picker if too many links (~300ms lag due to inefficient link translation from paraglidejs)
--   some confirmation on UI when adding/deleting favorite schedule (toast?)
+-   snackbar: update message on language change
+-   light/dark mode switch
+-   export to csv/xlsx

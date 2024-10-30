@@ -4,6 +4,7 @@ import type { OriginalScheduleType, ScheduleType, ScheduleView } from '$lib/type
 export const REPO_URL = 'https://github.com/szczursonn/uek-planzajec-v2';
 export const UEK_TIME_ZONE = 'Europe/Warsaw';
 export const MAX_SELECTABLE_SCHEDULES = 3;
+export const MAX_SAVED_SCHEDULE_SETS = 10;
 
 export const SCHEDULE_TYPES = ['group', 'lecturer', 'room'] as const;
 export const DEFAULT_SCHEDULE_TYPE = 'group' satisfies ScheduleType;
@@ -12,19 +13,22 @@ export const SCHEDULE_TYPE_TO_LABELS = {
         default: m.scheduleTypeGroup,
         tabName: m.scheduleTypeGroupTabName,
         documentTitle: m.scheduleTypeGroupChooseCTA,
-        documentTitleMore: m.scheduleTypeGroupAddNextCTA
+        documentTitleMore: m.scheduleTypeGroupAddNextCTA,
+        change: m.scheduleTypeGroupChange
     },
     lecturer: {
         default: m.scheduleTypeLecturer,
         tabName: m.scheduleTypeLecturerTabName,
         documentTitle: m.scheduleTypeLecturerChooseCTA,
-        documentTitleMore: m.scheduleTypeLecturerAddNextCTA
+        documentTitleMore: m.scheduleTypeLecturerAddNextCTA,
+        change: m.scheduleTypeLecturerChange
     },
     room: {
         default: m.scheduleTypeRoom,
         tabName: m.scheduleTypeRoomTabName,
         documentTitle: m.scheduleTypeRoomChooseCTA,
-        documentTitleMore: m.scheduleTypeRoomAddNextCTA
+        documentTitleMore: m.scheduleTypeRoomAddNextCTA,
+        change: m.scheduleTypeRoomChange
     }
 } as const satisfies Record<ScheduleType, unknown>;
 
@@ -44,10 +48,10 @@ export const SCHEDULE_VIEW_TO_LABEL = {
 } as const satisfies Record<ScheduleView, unknown>;
 
 export const COOKIE = {
-    FAVORITES: 'UEK-FAV',
-    SCHEDULE_VIEW: 'UEK-VIEW'
+    COOKIE_CONSENT_STATE: 'UEK-CCS',
+    SAVED_SCHEDULES: 'UEK-SS',
+    PREFERRED_SCHEDULE_VIEW: 'UEK-PSV'
 } as const;
-export const MAX_COOKIE_AGE = 1_000_000_000;
 
 export const SEARCH_PARAM = {
     PICKER: {
@@ -64,18 +68,43 @@ export const SEARCH_PARAM = {
     }
 } as const;
 
-export const SCHEDULE_TYPE_ORIGINAL_TO_NORMALIZED: Record<OriginalScheduleType, ScheduleType> = {
+export const SCHEDULE_TYPE_ORIGINAL_TO_NORMALIZED = {
     G: 'group',
     N: 'lecturer',
     S: 'room'
-};
+} as const satisfies Record<OriginalScheduleType, ScheduleType>;
 
 export const SCHEDULE_TYPE_NORMALIZED_TO_ORIGINAL = Object.fromEntries(
     Object.entries(SCHEDULE_TYPE_ORIGINAL_TO_NORMALIZED).map(([key, value]) => [value, key])
-) as Record<ScheduleType, OriginalScheduleType>;
+) as Readonly<Record<ScheduleType, OriginalScheduleType>>;
 
-export const CACHE_MAX_AGE_SECONDS = {
-    GROUPINGS: 60 * 30, //30m
-    HEADERS: 60 * 30, //30m
-    SCHEDULE: 60 * 10 //10m
+export const COOKIE_CONFIG = {
+    path: '/',
+    maxAge: 1_000_000_000,
+    httpOnly: false,
+    sameSite: 'lax'
+} as const;
+
+export const REJECTED_COOKIE_CONSENT_VERSION = 0;
+export const CURRENT_COOKIE_CONSENT_VERSION = 2;
+
+export const SCHEDULE_ITEM_RESOLVED_TYPE_MAPPING = {
+    wykład: 'lecture',
+    'wykład do wyboru': 'lecture',
+    'PPUZ wykład': 'lecture',
+    ćwiczenia: 'exercise',
+    'ćwiczenia do wyboru': 'exercise',
+    'ćwiczenia warsztatowe': 'exercise',
+    'Ćwiczenia e - learningowe': 'exercise',
+    'PPUZ ćwicz. warsztatowe': 'exercise',
+    'PPUZ ćwicz. laboratoryjne': 'exercise',
+    laboratorium: 'exercise',
+    'ćwiczenia audytoryjne': 'exercise',
+    konwersatorium: 'exercise',
+    'konwersatorium do wyboru': 'exercise',
+    lektorat: 'language',
+    'PPUZ lektorat': 'language',
+    seminarium: 'seminar',
+    egzamin: 'exam',
+    'Przeniesienie zajęć': 'cancelled'
 } as const;

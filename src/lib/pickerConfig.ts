@@ -151,9 +151,6 @@ const createGroupHeaderPickerConfig = (options: Options, grouping?: string): Pic
     const uniqueLanguageLevels = new Set<string>();
     let highestSemester = 0;
 
-    // L1 - 1 stopień, stacjonarne
-    // L2 - 1 rok, 1 semestr
-
     for (const option of detailedOptions) {
         if (option.details.mode) {
             uniqueModes.add(option.details.mode);

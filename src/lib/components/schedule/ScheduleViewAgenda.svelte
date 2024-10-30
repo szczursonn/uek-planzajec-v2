@@ -1,42 +1,30 @@
 <script lang="ts">
     import { languageTag } from '$lib/paraglide/runtime';
     import * as m from '$lib/paraglide/messages';
-    import type { ScheduleItem, ScheduleViewComponentProps } from '$lib/types';
+    import type {
+        ExtendedScheduleItem,
+        ResolvedScheduleItemType,
+        ScheduleViewComponentProps
+    } from '$lib/types';
     import { UEK_TIME_ZONE } from '$lib/consts';
-    import {
-        createHourRangeLabelProvider,
-        createMoodleURL,
-        createScheduleItemTypeClassProvider,
-        isScheduleItemCancelled
-    } from '$lib/utils';
     import { getLocalDateParts } from '$lib/dateUtils';
-    import { now } from '$lib/stores';
-    import SvgIcon from '$lib/components/SvgIcon.svelte';
+    import { createMoodleURL } from '$lib/linkUtils';
+    import { getGlobalContext } from '$lib/stores/globalContext';
+    import Icon from '$lib/components/Icon.svelte';
     import moodleLecturerLinkIcon from '$lib/assets/moodleLecturerLinkIcon.jpg';
 
-    const { scheduleType, scheduleItems, isMultipleSchedules }: ScheduleViewComponentProps =
-        $props();
-    const getScheduleItemTypeClass = createScheduleItemTypeClassProvider(
-        {
-            lecture: 'bg-sky-600',
-            exercise: 'bg-amber-600',
-            language: 'bg-green-600',
-            seminar: 'bg-indigo-700',
-            exam: 'bg-red-500'
-        },
-        'border-2 border-zinc-300 bg-black'
-    );
+    const { nowStore } = getGlobalContext();
+
+    const { headers, scheduleType, scheduleItems }: ScheduleViewComponentProps = $props();
 
     const sortedItemGroups = $derived.by(() => {
-        const createHourRangeLabel = createHourRangeLabelProvider();
-
         if (scheduleItems.length === 0) {
             return [];
         }
 
         const hasMultipleYears =
-            getLocalDateParts(new Date(scheduleItems[0]!.start)).year !==
-            getLocalDateParts(new Date(scheduleItems.at(-1)!.start)).year;
+            getLocalDateParts(scheduleItems[0]!.startDate).year !==
+            getLocalDateParts(scheduleItems.at(-1)!.startDate).year;
 
         const monthHeaderFormatter = new Intl.DateTimeFormat(languageTag(), {
             timeZone: UEK_TIME_ZONE,
@@ -49,7 +37,7 @@
             weekday: 'short'
         });
 
-        const currentDateParts = getLocalDateParts($now);
+        const currentDateParts = getLocalDateParts($nowStore);
 
         const monthGroups = [] as {
             monthHeader: string;
@@ -57,17 +45,13 @@
                 dayOfMonth: number;
                 dayOfWeek: string;
                 isCurrent: boolean;
-                items: (ScheduleItem & {
-                    hourRangeLabel: string;
-                    isCancelled: boolean;
-                })[];
+                items: (ExtendedScheduleItem & { typeCircleClass: string })[];
             }[];
         }[];
 
         let previousItemStartDateParts: ReturnType<typeof getLocalDateParts> | undefined;
         for (const item of scheduleItems) {
-            const itemStartDate = new Date(item.start);
-            const itemStartDateParts = getLocalDateParts(itemStartDate);
+            const itemStartDateParts = getLocalDateParts(item.startDate);
 
             if (
                 itemStartDateParts.day !== previousItemStartDateParts?.day ||
@@ -79,14 +63,14 @@
                     itemStartDateParts.year !== previousItemStartDateParts.year
                 ) {
                     monthGroups.push({
-                        monthHeader: monthHeaderFormatter.format(itemStartDate),
+                        monthHeader: monthHeaderFormatter.format(item.startDate),
                         dayGroups: []
                     });
                 }
 
                 monthGroups.at(-1)!.dayGroups.push({
                     dayOfMonth: itemStartDateParts.day,
-                    dayOfWeek: dayOfWeekFormatter.format(itemStartDate),
+                    dayOfWeek: dayOfWeekFormatter.format(item.startDate),
                     isCurrent:
                         itemStartDateParts.day === currentDateParts.day &&
                         itemStartDateParts.month === currentDateParts.month &&
@@ -101,8 +85,16 @@
                 .dayGroups.at(-1)!
                 .items.push({
                     ...item,
-                    hourRangeLabel: createHourRangeLabel(itemStartDate, new Date(item.end)),
-                    isCancelled: isScheduleItemCancelled(item)
+                    typeCircleClass:
+                        (
+                            {
+                                lecture: 'bg-sky-600',
+                                exercise: 'bg-amber-600',
+                                language: 'bg-green-600',
+                                seminar: 'bg-indigo-700',
+                                exam: 'bg-red-500'
+                            } satisfies Partial<Record<ResolvedScheduleItemType, string>>
+                        )[item.resolvedType as string] ?? 'border-2 border-zinc-300 bg-black'
                 });
         }
 
@@ -118,7 +110,7 @@
             >
                 {monthGroup.monthHeader}
             </div>
-            <ul class="divide-y-2 divide-accent">
+            <ul class="divide-y-2 divide-accent-default">
                 {#each monthGroup.dayGroups as dayGroup}
                     <li class="grid grid-cols-12 gap-x-2">
                         <div class="col-span-2 m-4 flex flex-col items-center lg:col-span-1">
@@ -132,15 +124,20 @@
                         <ul class="col-span-10 lg:col-span-11">
                             {#each dayGroup.items as item}
                                 <li
-                                    class={`my-4 grid grid-cols-12 items-center gap-y-0.5 sm:items-start${item.isCancelled ? ' text-secondary' : ''}`}
+                                    class={`relative my-4 grid grid-cols-12 items-center gap-y-0.5 sm:items-start${item.isFinished || item.isCancelled ? ' opacity-70 transition-opacity hover:opacity-100' : ''}`}
                                 >
+                                    {#if item.isInProgress}
+                                        <div
+                                            class="pointer-events-none absolute bottom-[-10%] left-[-2.5%] h-[120%] w-[105%] animate-pulse rounded-lg border-2 border-accent-default"
+                                            aria-hidden="true"
+                                        ></div>
+                                    {/if}
+
                                     <span
                                         class="col-span-full flex flex-row items-center gap-2 text-sm lg:col-span-2"
                                     >
                                         <div
-                                            class={`${getScheduleItemTypeClass(
-                                                item.type
-                                            )} h-4 w-4 rounded-full sm:h-5 sm:w-5`}
+                                            class={`${item.typeCircleClass} h-4 w-4 rounded-full sm:h-5 sm:w-5`}
                                             aria-hidden="true"
                                         ></div>
                                         <span class={item.isCancelled ? 'line-through' : ''}>
@@ -156,13 +153,6 @@
                                                     .filter(Boolean)
                                                     .join(' - ')}
                                             </span>
-                                            {#if isMultipleSchedules || scheduleType !== 'group'}
-                                                <span
-                                                    class="whitespace-nowrap text-xs text-secondary"
-                                                >
-                                                    {item.groups.join(', ')}
-                                                </span>
-                                            {/if}
                                         </div>
 
                                         {#each item.lecturers as lecturer}
@@ -185,7 +175,7 @@
                                                         />
                                                     </a>
                                                 {:else}
-                                                    <SvgIcon
+                                                    <Icon
                                                         iconName="person"
                                                         class="h-3 w-3"
                                                         ariaHidden
@@ -195,28 +185,42 @@
                                             </div>
                                         {/each}
 
-                                        {#if item.room}
+                                        {#if item.room && !item.room.url}
                                             <span class="flex items-center gap-1.5 text-xs">
-                                                {#if item.room.url}
-                                                    <a
-                                                        href={item.room.url}
-                                                        target="_blank"
-                                                        rel="noopener"
-                                                        title={item.room.name}
-                                                        class="mt-2 rounded-lg border border-tiertiary bg-primary px-4 py-2 text-sm transition-colors first-letter:capitalize hover:border-accent hover:underline focus:border-accent focus:underline"
-                                                    >
-                                                        {item.room.name}
-                                                    </a>
-                                                {:else}
-                                                    <SvgIcon
-                                                        class="mb-0.5 h-3 w-3"
-                                                        iconName="pin"
-                                                        ariaHidden
-                                                    />
-                                                    <span>{item.room.name}</span>
-                                                {/if}
+                                                <Icon
+                                                    class="mb-0.5 h-3 w-3"
+                                                    iconName="pin"
+                                                    ariaHidden
+                                                />
+                                                <span>{item.room.name}</span>
                                             </span>
                                         {/if}
+
+                                        {#if headers.length > 1 || scheduleType !== 'group' || item.groups.length > 1}
+                                            <span class="flex items-center gap-1.5 text-xs">
+                                                <Icon
+                                                    class="max-h-3 max-w-3"
+                                                    iconName="bookmarkOutline"
+                                                    ariaHidden
+                                                />
+                                                <span>{item.groups.join(', ')}</span>
+                                            </span>
+                                        {/if}
+
+                                        {#if item.room?.url}
+                                            <div class="flex">
+                                                <a
+                                                    href={item.room.url}
+                                                    target="_blank"
+                                                    rel="noopener"
+                                                    title={item.room.name}
+                                                    class="border-tertiary mt-1 rounded-lg border bg-primary px-4 py-2 text-sm transition-colors first-letter:capitalize hover:border-accent-default hover:underline focus:border-accent-default focus:underline"
+                                                >
+                                                    {item.room.name}
+                                                </a>
+                                            </div>
+                                        {/if}
+
                                         {#if item.extra}
                                             <hr class=" border-secondary" />
                                             <span class="text-error">{item.extra}</span>
