@@ -3,7 +3,7 @@
     import * as m from '$lib/paraglide/messages';
     import type {
         ExtendedScheduleItem,
-        ResolvedScheduleItemType,
+        ResolvedExtendedScheduleItemType,
         ScheduleViewComponentProps
     } from '$lib/types';
     import { UEK_TIME_ZONE } from '$lib/consts';
@@ -20,10 +20,7 @@
 
     const { nowStore } = getGlobalContext();
 
-    const { headers, scheduleType, scheduleItems, currentPeriod }: ScheduleViewComponentProps =
-        $props();
-
-    const isMultipleSchedules = $derived(headers.length > 1);
+    const { extendedAggregateSchedule }: ScheduleViewComponentProps = $props();
 
     const dayGroups = $derived.by(() => {
         const groupLabelFormatter = new Intl.DateTimeFormat(languageTag(), {
@@ -33,8 +30,10 @@
             weekday: 'short'
         });
 
-        const periodStartDate = new Date(currentPeriod.from);
-        const periodEndDate = new Date(currentPeriod.to);
+        const { startDate: periodStartDate, endDate: periodEndDate } =
+            extendedAggregateSchedule.periodOptions.find(
+                (periodOption) => periodOption.id === extendedAggregateSchedule.period
+            )!;
 
         const dayGroups: {
             label: string;
@@ -49,10 +48,20 @@
         let previousDateParts: ReturnType<typeof getLocalDateParts> | undefined;
         for (const date of eachLocalDayBetween(
             getPreviousMonday(
-                new Date(Math.min(periodStartDate.getTime(), scheduleItems[0]!.startDate.getTime()))
+                new Date(
+                    Math.min(
+                        periodStartDate.getTime(),
+                        extendedAggregateSchedule.items[0]!.startDate.getTime()
+                    )
+                )
             ),
             getNextSunday(
-                new Date(Math.max(periodEndDate.getTime(), scheduleItems.at(-1)!.endDate.getTime()))
+                new Date(
+                    Math.max(
+                        periodEndDate.getTime(),
+                        extendedAggregateSchedule.items.at(-1)!.endDate.getTime()
+                    )
+                )
             )
         )) {
             const dateParts = getLocalDateParts(date);
@@ -77,8 +86,10 @@
                 previousDateParts = dateParts;
             }
 
-            while (i < scheduleItems.length) {
-                const itemStartDateParts = getLocalDateParts(scheduleItems[i]!.startDate);
+            while (i < extendedAggregateSchedule.items.length) {
+                const itemStartDateParts = getLocalDateParts(
+                    extendedAggregateSchedule.items[i]!.startDate
+                );
 
                 if (
                     itemStartDateParts.day !== dateParts.day ||
@@ -89,7 +100,7 @@
                 }
 
                 dayGroups.at(-1)!.items.push({
-                    ...scheduleItems[i]!,
+                    ...extendedAggregateSchedule.items[i]!,
                     typeContainerClass:
                         (
                             {
@@ -99,8 +110,8 @@
                                 seminar: 'bg-indigo-700 border-indigo-900',
                                 exam: 'bg-red-700 border-red-900',
                                 cancelled: 'bg-secondary border-gray-900 border-2 text-secondary'
-                            } satisfies Partial<Record<ResolvedScheduleItemType, string>>
-                        )[scheduleItems[i]!.resolvedType as string] ??
+                            } satisfies Partial<Record<ResolvedExtendedScheduleItemType, string>>
+                        )[extendedAggregateSchedule.items[i]!.resolvedType as string] ??
                         'bg-secondary border-gray-900 border-2'
                 });
                 i++;
@@ -122,13 +133,23 @@
             <ul class="flex flex-col gap-2">
                 {#each group.items as item}
                     <li
-                        class={`${item.typeContainerClass} ${item.isFinished ? 'opacity-70 transition-opacity hover:opacity-100' : ''} relative flex flex-col gap-y-[1px] rounded-lg border-2 p-3 text-xs sm:p-1.5 sm:text-xxs lg:p-3 lg:text-xs`}
+                        class={`${item.typeContainerClass}${item.isFinished && extendedAggregateSchedule.period === 'upcoming' ? ' opacity-80 transition-opacity hover:opacity-100' : ''} relative flex flex-col gap-y-[1px] rounded-lg border-2 p-3 text-xs sm:p-1.5 sm:text-xxs lg:p-3 lg:text-xs`}
                     >
-                        {#if item.isInProgress}
+                        {#if item.isInProgress || item.isFirstUpcoming}
                             <div
-                                class="pointer-events-none absolute -bottom-0.5 -left-0.5 h-[calc(100%+4px)] w-[calc(100%+4px)] animate-pulse rounded-lg border-4 border-accent-default"
-                                aria-hidden="true"
-                            ></div>
+                                class={`${item.isInProgress ? 'animate-pulse ' : ''}pointer-events-none absolute -bottom-0.5 -left-0.5 flex h-[calc(100%+4px)] w-[calc(100%+4px)] justify-center rounded-lg border-4 border-accent-default`}
+                            >
+                                <div
+                                    class="pointer-events-auto h-min w-full bg-accent-default py-1 text-center text-sm font-bold first-letter:capitalize"
+                                >
+                                    {#if item.isInProgress}
+                                        {m.scheduleItemInProgress()}
+                                    {:else}
+                                        {item.startDateRelativeTimeLabel}
+                                    {/if}
+                                </div>
+                            </div>
+                            <div class="mt-6"></div>
                         {/if}
                         <span class="text-sm font-bold sm:break-all sm:text-xs lg:break-normal">
                             {[item.subject, item.type].filter(Boolean).join(' - ')}
@@ -196,7 +217,7 @@
                                 {/if}
                             </span>
                         {/if}
-                        {#if isMultipleSchedules || scheduleType !== 'group'}
+                        {#if extendedAggregateSchedule.headers.length > 1 || extendedAggregateSchedule.type !== 'group'}
                             {#each item.groups as itemGroup}
                                 <span class="text-right">
                                     {itemGroup}

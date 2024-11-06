@@ -159,7 +159,7 @@ export const getDateFromLocalParts = ({
     return itemDate;
 };
 
-const removeLocalTime = (date: Date) => {
+export const removeLocalTime = (date: Date) => {
     const localDateParts = getLocalDateParts(date);
     // optimization: do not call getDateFromLocalParts unnecessarily
     if (localDateParts.hour !== 0 || localDateParts.minute !== 0) {

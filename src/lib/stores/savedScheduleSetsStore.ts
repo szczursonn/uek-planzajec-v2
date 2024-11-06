@@ -5,9 +5,10 @@ import {
     addToSavedScheduleSet,
     createStoreTabSyncer,
     encodeSavedScheduleSets,
-    getSavedScheduleSetKey,
+    getAggregateScheduleKey,
     removeFromSavedScheduleSet
 } from '$lib/storeUtils';
+import { isSavedScheduleSetLimitReached } from '$lib/utils';
 
 export const createSavedScheduleSetsStore = (
     initialSavedScheduleSets: SavedScheduleSets,
@@ -20,8 +21,11 @@ export const createSavedScheduleSetsStore = (
         },
         isSaved(scheduleType: ScheduleType, savedScheduleSetKey: string) {
             return this.ofType(scheduleType).some(
-                (scheduleSet) => getSavedScheduleSetKey(scheduleSet) === savedScheduleSetKey
+                (scheduleSet) => getAggregateScheduleKey(scheduleSet) === savedScheduleSetKey
             );
+        },
+        isLimitReached() {
+            return isSavedScheduleSetLimitReached(this.scheduleSets);
         }
     });
 

@@ -15,6 +15,13 @@ export const load = async (ctx) => {
         }
     }
 
+    // clear legacy cookies
+    for (const legacyCookieName of ['UEK-FAV', 'UEK-VIEW']) {
+        if (ctx.cookies.get(legacyCookieName)) {
+            ctx.cookies.delete(legacyCookieName, COOKIE_CONFIG);
+        }
+    }
+
     return {
         initialNowAsNumber: new Date().getTime(),
         initialCookieConsentState: readCookieConsentStateCookie(ctx),

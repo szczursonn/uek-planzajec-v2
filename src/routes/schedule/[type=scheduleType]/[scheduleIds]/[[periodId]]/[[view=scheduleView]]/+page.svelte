@@ -1,19 +1,15 @@
 <script lang="ts">
     import { navigating, page } from '$app/stores';
     import { goto } from '$app/navigation';
-    import { languageTag } from '$lib/paraglide/runtime';
     import * as m from '$lib/paraglide/messages';
     import { i18n } from '$lib/i18n';
-    import type { Schedule, ScheduleView } from '$lib/types';
+    import type { SchedulePeriod, ScheduleView } from '$lib/types';
     import {
         MAX_SELECTABLE_SCHEDULES,
-        SCHEDULE_TYPE_TO_LABELS,
         SCHEDULE_VIEWS,
         SCHEDULE_VIEW_TO_LABEL,
-        SEARCH_PARAM,
-        UEK_TIME_ZONE
+        SEARCH_PARAM
     } from '$lib/consts';
-    import { getSavedScheduleSetKey } from '$lib/storeUtils';
     import {
         createMoodleURL,
         createOriginalURL,
@@ -30,7 +26,7 @@
     import Button from '$lib/components/form/Button.svelte';
     import Select from '$lib/components/form/Select.svelte';
     import moodleLecturerLinkIcon from '$lib/assets/moodleLecturerLinkIcon.jpg';
-    import { createExtendedScheduleItemProvider } from '$lib/utils';
+    import { extendAggregateSchedule } from '$lib/utils';
 
     const {
         savedScheduleSetsStore,
@@ -41,7 +37,9 @@
     } = getGlobalContext();
     const { data } = $props();
 
-    const scheduleTypeLabels = $derived(SCHEDULE_TYPE_TO_LABELS[data.scheduleType]);
+    const extendedAggregateSchedule = $derived(
+        extendAggregateSchedule(data.aggregateSchedule, $nowStore)
+    );
 
     // TODO: allow shallow navigation when changing schedule view
     const currentScheduleView = $derived({
@@ -57,20 +55,6 @@
         }[currentScheduleView.value]
     );
 
-    const periodPicklistOptions = $derived.by(() => {
-        const periodOptionsDateFormatter = new Intl.DateTimeFormat(languageTag(), {
-            timeZone: UEK_TIME_ZONE,
-            dateStyle: 'medium'
-        });
-
-        return data.periods.map((period, i) => ({
-            value: i.toString(),
-            label: periodOptionsDateFormatter.formatRange(
-                new Date(period.from),
-                new Date(period.to)
-            )
-        }));
-    });
     const scheduleViewPicklistOptions = $derived(
         SCHEDULE_VIEWS.map((scheduleView) => ({
             value: scheduleView,
@@ -78,33 +62,28 @@
         }))
     );
 
-    const currentScheduleSetCombinedName = $derived(
-        data.headers.map((scheduleHeader) => scheduleHeader.name).join(', ')
-    );
-    const currentScheduleSetKey = $derived(getSavedScheduleSetKey(data.headers));
     const isCurrentScheduleSetSaved = $derived(
-        $savedScheduleSetsStore.isSaved(data.scheduleType, currentScheduleSetKey)
+        $savedScheduleSetsStore.isSaved(
+            extendedAggregateSchedule.type,
+            extendedAggregateSchedule.key
+        )
     );
-
-    const extendedScheduleItems = $derived.by(() => {
-        const createExtendedScheduleItem = createExtendedScheduleItemProvider($nowStore);
-        return data.items.map((scheduleItem) => createExtendedScheduleItem(scheduleItem));
-    });
 </script>
 
 <PageMetadata
-    titleParts={[data.headers.map((schedule) => schedule.name).join(', ')]}
+    titleParts={[extendedAggregateSchedule.displayName]}
     description={m.metaPageDescriptionSchedule({
-        schedules: data.headers.map((schedule) => schedule.name).join(', ')
+        schedules: extendedAggregateSchedule.displayName
     })}
-    disallowRobots={data.headers.length > 1 || currentScheduleView.isReflectedInUrl}
+    disallowRobots={extendedAggregateSchedule.headers.length > 1 ||
+        currentScheduleView.isReflectedInUrl}
 />
-<div class="mb-4 flex flex-col justify-between gap-2 sm:gap-4 xl:flex-row">
-    <div class="flex flex-wrap gap-4 sm:justify-between xl:justify-start">
+<div class="mb-4 flex flex-col justify-between gap-2 sm:gap-4 2xl:flex-row">
+    <div class="flex flex-wrap gap-4 sm:justify-between 2xl:justify-start">
         <div class="flex flex-col flex-wrap gap-1 sm:flex-row sm:gap-2 lg:flex-nowrap lg:gap-4">
-            {#each data.headers as header}
+            {#each extendedAggregateSchedule.headers as header}
                 <div class="flex flex-wrap items-center">
-                    <span class="text-lg font-bold md:text-2xl 2xl:text-3xl">{header.name}</span>
+                    <span class="text-lg font-bold md:text-2xl 3xl:text-3xl">{header.name}</span>
                     {#if header.moodleId}
                         <a
                             class="ml-2.5 text-accent hover:underline"
@@ -124,15 +103,15 @@
                             />
                         </a>
                     {/if}
-                    {#if data.headers.length > 1}
+                    {#if extendedAggregateSchedule.headers.length > 1}
                         <a
                             class="ml-1.5 items-center rounded-sm p-1.5 text-sm transition-colors hover:bg-secondary hover:underline"
                             href={createScheduleURL({
-                                scheduleType: data.scheduleType,
-                                scheduleIds: data.headers
+                                scheduleType: extendedAggregateSchedule.type,
+                                scheduleIds: extendedAggregateSchedule.headers
                                     .filter((h) => h !== header)
                                     .map((h) => h.id),
-                                periodIndex: data.currentPeriodIndex,
+                                schedulePeriod: extendedAggregateSchedule.period,
                                 scheduleView: currentScheduleView.isReflectedInUrl
                                     ? currentScheduleView.value
                                     : undefined
@@ -158,29 +137,31 @@
         </div>
 
         <div class="flex gap-2 text-sm sm:text-base">
-            {#if data.headers.length === 1}
+            {#if extendedAggregateSchedule.headers.length === 1}
                 <Button
                     href={createSchedulePickerURL({
-                        scheduleType: data.scheduleType
+                        scheduleType: extendedAggregateSchedule.type
                     })}
                     variant="outline"
                     nofollow
-                    label={scheduleTypeLabels.documentTitle()}
+                    label={extendedAggregateSchedule.typeLabels.documentTitle()}
                     iconName="chevronDown"
                 />
             {/if}
-            {#if data.headers.length < MAX_SELECTABLE_SCHEDULES}
+            {#if extendedAggregateSchedule.headers.length < MAX_SELECTABLE_SCHEDULES}
                 <Button
                     href={createSchedulePickerURL({
-                        scheduleType: data.scheduleType,
+                        scheduleType: extendedAggregateSchedule.type,
                         pickerState: {
-                            periodIndex: data.currentPeriodIndex,
-                            scheduleIds: data.headers.map((header) => header.id)
+                            scheduleIds: extendedAggregateSchedule.headers.map(
+                                (header) => header.id
+                            ),
+                            schedulePeriod: extendedAggregateSchedule.period
                         }
                     })}
                     variant="outline"
                     nofollow
-                    label={scheduleTypeLabels.documentTitleMore()}
+                    label={extendedAggregateSchedule.typeLabels.documentTitleMore()}
                     iconName="plus"
                 />
             {/if}
@@ -195,32 +176,44 @@
                         e.preventDefault();
 
                         if (isCurrentScheduleSetSaved) {
-                            savedScheduleSetsStore.remove(data.scheduleType, currentScheduleSetKey);
+                            savedScheduleSetsStore.remove(
+                                extendedAggregateSchedule.type,
+                                extendedAggregateSchedule.key
+                            );
                             snackbarStore.show({
                                 message: m.snackbarScheduleRemoveMessage({
-                                    scheduleSet: currentScheduleSetCombinedName
+                                    scheduleSet: extendedAggregateSchedule.displayName
                                 })
                             });
                         } else {
-                            savedScheduleSetsStore.add(data.scheduleType, data.headers);
+                            savedScheduleSetsStore.add(
+                                extendedAggregateSchedule.type,
+                                extendedAggregateSchedule.headers
+                            );
                             snackbarStore.show({
                                 message: m.snackbarScheduleSavedMessage({
-                                    scheduleSet: currentScheduleSetCombinedName
+                                    scheduleSet: extendedAggregateSchedule.displayName
                                 })
                             });
                         }
                     }}
                 >
-                    <input name="headers" type="hidden" value={JSON.stringify(data.headers)} />
+                    <input
+                        name="headers"
+                        type="hidden"
+                        value={JSON.stringify(extendedAggregateSchedule.headers)}
+                    />
                     <button
                         class="p-1"
                         type="submit"
+                        disabled={!isCurrentScheduleSetSaved &&
+                            $savedScheduleSetsStore.isLimitReached()}
                         title={isCurrentScheduleSetSaved
                             ? m.removeScheduleSetFromSavedScheduleSets({
-                                  scheduleSet: currentScheduleSetCombinedName
+                                  scheduleSet: extendedAggregateSchedule.displayName
                               })
                             : m.addScheduleSetToSavedScheduleSets({
-                                  scheduleSet: currentScheduleSetCombinedName
+                                  scheduleSet: extendedAggregateSchedule.displayName
                               })}
                     >
                         <Icon
@@ -230,10 +223,10 @@
                         <span class="sr-only">
                             {isCurrentScheduleSetSaved
                                 ? m.removeScheduleSetFromSavedScheduleSets({
-                                      scheduleSet: currentScheduleSetCombinedName
+                                      scheduleSet: extendedAggregateSchedule.displayName
                                   })
                                 : m.addScheduleSetToSavedScheduleSets({
-                                      scheduleSet: currentScheduleSetCombinedName
+                                      scheduleSet: extendedAggregateSchedule.displayName
                                   })}
                         </span>
                     </button>
@@ -245,24 +238,26 @@
     <form
         action="?/setPeriodAndView"
         method="POST"
-        class="flex min-w-[25%] flex-wrap gap-2 sm:flex-nowrap sm:gap-4 2xl:min-w-[30%] 3xl:min-w-[35%]"
+        class="flex min-w-[25%] flex-wrap gap-2 sm:flex-nowrap sm:gap-4 2xl:min-w-[35%]"
     >
         <Select
             name={SEARCH_PARAM.SCHEDULE.PERIOD}
             title={m.scheduleViewPeriodPickerTitle()}
             disabled={!!$navigating}
             variant="underline"
-            options={periodPicklistOptions}
-            value={data.currentPeriodIndex.toString()}
+            options={extendedAggregateSchedule.periodOptions}
+            value={extendedAggregateSchedule.period}
             onchange={(e) => {
                 e.preventDefault();
 
                 goto(
                     i18n.resolveRoute(
                         createScheduleURL({
-                            scheduleType: data.scheduleType,
-                            scheduleIds: data.headers.map((header) => header.id),
-                            periodIndex: parseInt(e.currentTarget.value),
+                            scheduleType: extendedAggregateSchedule.type,
+                            scheduleIds: extendedAggregateSchedule.headers.map(
+                                (header) => header.id
+                            ),
+                            schedulePeriod: e.currentTarget.value as SchedulePeriod,
                             scheduleView: currentScheduleView.isReflectedInUrl
                                 ? currentScheduleView.value
                                 : undefined
@@ -272,6 +267,7 @@
             }}
         />
         <Select
+            class="2xl:max-w-fit"
             name={SEARCH_PARAM.SCHEDULE.VIEW}
             title={m.scheduleViewViewPickerTitle()}
             disabled={!!$navigating}
@@ -286,9 +282,11 @@
                 goto(
                     i18n.resolveRoute(
                         createScheduleURL({
-                            scheduleType: data.scheduleType,
-                            scheduleIds: data.headers.map((header) => header.id),
-                            periodIndex: data.currentPeriodIndex,
+                            scheduleType: extendedAggregateSchedule.type,
+                            scheduleIds: extendedAggregateSchedule.headers.map(
+                                (header) => header.id
+                            ),
+                            schedulePeriod: extendedAggregateSchedule.period,
                             scheduleView: newScheduleView
                         })
                     ),
@@ -302,26 +300,8 @@
     </form>
 </div>
 
-{#if data.items.length > 0}
-    <CurrentScheduleViewComponent
-        headers={data.headers}
-        scheduleItems={extendedScheduleItems}
-        scheduleType={data.scheduleType}
-        currentPeriod={data.periods[data.currentPeriodIndex] as Schedule['periods'][number]}
-    />
-    {#if currentScheduleView.value !== 'ical' && data.currentPeriodIndex === 0}
-        <div class="my-2 flex items-center gap-3">
-            <Icon class="max-h-7 max-w-7" iconName="alert" ariaHidden />
-            <span>
-                {m.scheduleChangePeriodHint({
-                    current:
-                        periodPicklistOptions.find(
-                            (option) => option.value === data.currentPeriodIndex.toString()
-                        )?.label ?? ''
-                })}
-            </span>
-        </div>
-    {/if}
+{#if extendedAggregateSchedule.items.length > 0}
+    <CurrentScheduleViewComponent {extendedAggregateSchedule} />
 {:else}
     <div class="my-8 text-center text-lg font-semibold">{m.emptyScheduleMessage()}</div>
 {/if}
@@ -329,15 +309,17 @@
 <hr class="mt-4 border-secondary" />
 <div class="mt-4 flex flex-col gap-1">
     <span class="text-xl">
-        {data.headers.length === 1 ? m.originalSchedule() : m.originalSchedules()}
+        {extendedAggregateSchedule.headers.length === 1
+            ? m.originalSchedule()
+            : m.originalSchedules()}
     </span>
-    {#each data.headers as header}
+    {#each extendedAggregateSchedule.headers as header}
         <a
             class="max-w-min text-nowrap font-semibold text-accent hover:underline"
             href={createOriginalURL({
                 scheduleId: header.id,
-                scheduleType: data.scheduleType,
-                periodIndex: data.currentPeriodIndex
+                scheduleType: extendedAggregateSchedule.type,
+                schedulePeriod: extendedAggregateSchedule.period
             }).toString()}
             title={header.name}
             target="_blank"

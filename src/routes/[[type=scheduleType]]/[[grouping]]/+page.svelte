@@ -4,9 +4,9 @@
     import { page } from '$app/stores';
     import * as m from '$lib/paraglide/messages';
     import { getGlobalContext } from '$lib/stores/globalContext';
-    import { SCHEDULE_TYPE_TO_LABELS, SCHEDULE_TYPES } from '$lib/consts';
+    import { SCHEDULE_TYPE_TO_LABELS, SCHEDULE_TYPES, SEARCH_PARAM } from '$lib/consts';
     import { getPickerConfig } from '$lib/pickerConfig';
-    import { getSavedScheduleSetKey } from '$lib/storeUtils';
+    import { encodePickerState, getAggregateScheduleKey } from '$lib/storeUtils';
     import { createSchedulePickerURL, createScheduleURL } from '$lib/linkUtils';
     import NestableLinkList from '$lib/components/NestableLinkList.svelte';
     import Icon from '$lib/components/Icon.svelte';
@@ -22,7 +22,7 @@
         data.pickerState || $page.params.grouping
             ? []
             : $savedScheduleSetsStore.ofType(data.scheduleType).map((savedScheduleSet) => ({
-                  key: getSavedScheduleSetKey(savedScheduleSet),
+                  key: getAggregateScheduleKey(savedScheduleSet),
                   label: savedScheduleSet.map((scheduleHeader) => scheduleHeader.name).join(', '),
                   href: createScheduleURL({
                       scheduleType: data.scheduleType,
@@ -47,7 +47,7 @@
                     scheduleIds: data.pickerState
                         ? [...data.pickerState.scheduleIds, header.id]
                         : [header.id],
-                    periodIndex: data.pickerState?.periodIndex
+                    schedulePeriod: data.pickerState?.schedulePeriod
                 })
             }));
         }
@@ -127,7 +127,7 @@
             href={createScheduleURL({
                 scheduleType: data.scheduleType,
                 scheduleIds: data.pickerState.scheduleIds,
-                periodIndex: data.pickerState.periodIndex
+                schedulePeriod: data.pickerState.schedulePeriod
             })}
             title={m.backToSchedule()}
         >
@@ -221,8 +221,15 @@
                 />
             {/if}
         {/each}
+        {#if data.pickerState}
+            <input
+                type="hidden"
+                name={SEARCH_PARAM.PICKER.STATE}
+                value={encodePickerState(data.pickerState)}
+            />
+        {/if}
         <noscript class="basis-full">
-            <Button label={m.searchButton()} variant="outline" class="border-tertiary max-w-full" />
+            <Button label={m.searchButton()} variant="outline" class="max-w-full border-tertiary" />
         </noscript>
         {#if filtersConfig.length > 1 && Object.keys(filters).some((key) => filters[key])}
             <div class="mb-2 basis-full">

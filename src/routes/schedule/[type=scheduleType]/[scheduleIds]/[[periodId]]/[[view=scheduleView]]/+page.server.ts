@@ -11,7 +11,7 @@ import {
 import {
     scheduleHeaderSchema,
     scheduleIdSchema,
-    scheduleSelectedPeriodSchema,
+    schedulePeriodSchema,
     scheduleTypeSchema,
     scheduleViewSchema
 } from '$lib/server/schema';
@@ -20,20 +20,19 @@ import {
     COOKIE_CONFIG,
     DEFAULT_SCHEDULE_PERIOD,
     DEFAULT_SCHEDULE_TYPE,
-    MAX_SAVED_SCHEDULE_SETS,
     MAX_SELECTABLE_SCHEDULES,
     SEARCH_PARAM
 } from '$lib/consts';
-import { mergeMultipleScheduleItems } from '$lib/utils';
 import {
     addToSavedScheduleSet,
     encodeSavedScheduleSets,
-    getSavedScheduleSetKey,
+    getAggregateScheduleKey,
     removeFromSavedScheduleSet
 } from '$lib/storeUtils';
 import { layoutActions } from '$lib/layoutActions';
 import type { ScheduleType } from '$lib/types';
-import { createScheduleURL } from '$lib/linkUtils.js';
+import { createScheduleURL } from '$lib/linkUtils';
+import { isSavedScheduleSetLimitReached } from '$lib/utils';
 
 const pageParamsSchema = z.object({
     type: scheduleTypeSchema,
@@ -41,38 +40,22 @@ const pageParamsSchema = z.object({
         .string()
         .transform((str) => str.split('_'))
         .pipe(z.array(scheduleIdSchema).min(1).max(MAX_SELECTABLE_SCHEDULES)),
-    periodIndex: z.coerce
-        .number()
-        .pipe(scheduleSelectedPeriodSchema)
-        .optional()
-        .default(DEFAULT_SCHEDULE_PERIOD),
+    periodId: schedulePeriodSchema.optional().default(DEFAULT_SCHEDULE_PERIOD),
     view: scheduleViewSchema.optional()
 });
 
 export const load = async (ctx) => {
     const pageParams = pageParamsSchema.parse(ctx.params);
 
-    const uekService = createUEKService(ctx.platform);
-    const schedules = await Promise.all(
-        pageParams.scheduleIds.map((scheduleId) =>
-            uekService.getSchedule({
-                scheduleId,
-                scheduleType: pageParams.type,
-                periodIndex: pageParams.periodIndex
-            })
-        )
-    );
+    const aggregateSchedule = await createUEKService(ctx.platform).getAggregateSchedule({
+        scheduleIds: pageParams.scheduleIds,
+        scheduleType: pageParams.type,
+        schedulePeriod: pageParams.periodId,
+        now: new Date((await ctx.parent()).initialNowAsNumber)
+    });
 
     return {
-        headers: schedules.map((schedule) => ({
-            id: schedule.id,
-            name: schedule.name,
-            moodleId: schedule.moodleId
-        })),
-        items: mergeMultipleScheduleItems(schedules),
-        scheduleType: schedules[0]!.type,
-        periods: schedules[0]!.periods,
-        currentPeriodIndex: schedules[0]!.selectedPeriod
+        aggregateSchedule
     };
 };
 
@@ -93,11 +76,7 @@ export const actions = {
         assertCookiesAreEnabled(readCookieConsentStateCookie(ctx));
 
         const savedScheduleSets = readSavedScheduleSetsCookie(ctx);
-        if (
-            Object.values(savedScheduleSets)
-                .map((arr) => arr.length)
-                .reduce((acc, len) => acc + len, 0) >= MAX_SAVED_SCHEDULE_SETS
-        ) {
+        if (isSavedScheduleSetLimitReached(savedScheduleSets)) {
             error(400);
         }
 
@@ -123,7 +102,7 @@ export const actions = {
         removeFromSavedScheduleSet(
             savedScheduleSets,
             scheduleType,
-            getSavedScheduleSetKey(formData.headers)
+            getAggregateScheduleKey(formData.headers)
         );
 
         ctx.cookies.set(
@@ -137,9 +116,7 @@ export const actions = {
         const pageParams = pageParamsSchema.parse(ctx.params);
         const formData = z
             .object({
-                [SEARCH_PARAM.SCHEDULE.PERIOD]: z.coerce
-                    .number()
-                    .pipe(scheduleSelectedPeriodSchema),
+                [SEARCH_PARAM.SCHEDULE.PERIOD]: schedulePeriodSchema,
                 [SEARCH_PARAM.SCHEDULE.VIEW]: scheduleViewSchema
             })
             .parse(Object.fromEntries((await ctx.request.formData()).entries()));
@@ -157,7 +134,7 @@ export const actions = {
             createScheduleURL({
                 scheduleType: pageParams.type,
                 scheduleIds: pageParams.scheduleIds,
-                periodIndex: formData[SEARCH_PARAM.SCHEDULE.PERIOD],
+                schedulePeriod: formData[SEARCH_PARAM.SCHEDULE.PERIOD],
                 scheduleView: formData[SEARCH_PARAM.SCHEDULE.VIEW]
             })
         );

@@ -8,11 +8,11 @@ import type {
 } from '$lib/types';
 
 export const encodePickerState = (pickerState: PickerState) => {
-    return btoa(`${pickerState.periodIndex}.${pickerState.scheduleIds.join('.')}`);
+    return btoa(`${pickerState.schedulePeriod}.${pickerState.scheduleIds.join('.')}`);
 };
 
-export const getSavedScheduleSetKey = (savedScheduleSet: ScheduleHeader[]) =>
-    savedScheduleSet
+export const getAggregateScheduleKey = (scheduleHeaders: ScheduleHeader[]) =>
+    scheduleHeaders
         .map((schedule) => schedule.id)
         .sort()
         .join('');
@@ -22,12 +22,12 @@ export const addToSavedScheduleSet = (
     scheduleType: ScheduleType,
     newSavedScheduleSet: ScheduleHeader[]
 ) => {
-    const newSavedScheduleSetKey = getSavedScheduleSetKey(newSavedScheduleSet);
+    const newSavedScheduleSetKey = getAggregateScheduleKey(newSavedScheduleSet);
     savedScheduleSets[scheduleType] = savedScheduleSets[scheduleType] ?? [];
 
     if (
         savedScheduleSets[scheduleType].every(
-            (scheduleSet) => getSavedScheduleSetKey(scheduleSet) !== newSavedScheduleSetKey
+            (scheduleSet) => getAggregateScheduleKey(scheduleSet) !== newSavedScheduleSetKey
         )
     ) {
         savedScheduleSets[scheduleType].push(newSavedScheduleSet);
@@ -44,7 +44,7 @@ export const removeFromSavedScheduleSet = (
     }
 
     savedScheduleSets[scheduleType] = savedScheduleSets[scheduleType].filter(
-        (scheduleSet) => getSavedScheduleSetKey(scheduleSet) !== savedScheduleSetKey
+        (scheduleSet) => getAggregateScheduleKey(scheduleSet) !== savedScheduleSetKey
     );
     if (savedScheduleSets[scheduleType].length === 0) {
         delete savedScheduleSets[scheduleType];

@@ -8,7 +8,7 @@ import {
     scheduleTypeSchema,
     scheduleIdSchema,
     scheduleNameSchema,
-    scheduleSelectedPeriodSchema
+    schedulePeriodSchema
 } from '$lib/server/schema';
 import {
     COOKIE,
@@ -77,8 +77,7 @@ export const readSavedScheduleSetsCookie = (ctx: RequestEvent) => {
                 .pipe(savedScheduleSetsSchema)
         );
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (err) {
-        console.error('failed to read schedule set cookie', err);
+    } catch (_) {
         return {};
     }
 };
@@ -92,12 +91,8 @@ export const readPickerState = (ctx: RequestEvent) => {
             .string()
             .base64()
             .transform((value) => atob(value).split('.'))
-            .pipe(
-                z
-                    .tuple([z.coerce.number().pipe(scheduleSelectedPeriodSchema)])
-                    .rest(scheduleIdSchema)
-            )
-            .transform(([periodIndex, ...scheduleIds]) => ({ periodIndex, scheduleIds }))
+            .pipe(z.tuple([schedulePeriodSchema]).rest(scheduleIdSchema))
+            .transform(([schedulePeriod, ...scheduleIds]) => ({ schedulePeriod, scheduleIds }))
             .pipe(pickerStateSchema)
             .parse(ctx.url.searchParams.get(SEARCH_PARAM.PICKER.STATE));
         // eslint-disable-next-line @typescript-eslint/no-unused-vars

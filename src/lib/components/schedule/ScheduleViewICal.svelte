@@ -3,10 +3,10 @@
     import * as m from '$lib/paraglide/messages';
     import type { ScheduleHeader, ScheduleViewComponentProps } from '$lib/types';
 
-    const { headers, scheduleType }: ScheduleViewComponentProps = $props();
+    const { extendedAggregateSchedule }: ScheduleViewComponentProps = $props();
 
     const createIcalUrl = $derived((headers: ScheduleHeader[]) => {
-        return `${$page.url.origin}/ical/${encodeURIComponent(scheduleType)}/${headers.map((header) => encodeURIComponent(header.id)).join('/')}`;
+        return `${$page.url.origin}/ical/${encodeURIComponent(extendedAggregateSchedule.type)}/${headers.map((header) => encodeURIComponent(header.id)).join('/')}`;
     });
 </script>
 
@@ -19,12 +19,12 @@
 <div class="my-12 flex flex-col items-center gap-y-2 text-center">
     <span>{m.useThisLinkForGoogleCalendarMessage()}</span>
     {@render codeblock({
-        text: createIcalUrl(headers)
+        text: createIcalUrl(extendedAggregateSchedule.headers)
     })}
 
-    {#if headers.length > 1}
+    {#if extendedAggregateSchedule.headers.length > 1}
         <span>{m.youCanAlsoSeperateLinksForGoogleCalendar()}</span>
-        {#each headers as header}
+        {#each extendedAggregateSchedule.headers as header}
             <span>
                 <span>{header.name}: </span>
                 {@render codeblock({

@@ -1,3 +1,8 @@
+<script lang="ts" module>
+    const TABLE_HEAD_CELL_CLASS = 'p-1 sm:p-2';
+    const TABLE_CELL_BASE_CLASS = 'max-w-96 p-1 sm:p-2';
+</script>
+
 <script lang="ts">
     import { languageTag } from '$lib/paraglide/runtime';
     import * as m from '$lib/paraglide/messages';
@@ -11,12 +16,7 @@
 
     const { nowStore } = getGlobalContext();
 
-    const TABLE_HEAD_CELL_CLASS = 'p-1 sm:p-2';
-    const TABLE_CELL_BASE_CLASS = 'max-w-96 p-1 sm:p-2';
-
-    const { headers, scheduleType, scheduleItems }: ScheduleViewComponentProps = $props();
-
-    const isMultipleSchedules = $derived(headers.length > 1);
+    const { extendedAggregateSchedule }: ScheduleViewComponentProps = $props();
 
     const extendedScheduleItems = $derived.by(() => {
         const currentDateParts = getLocalDateParts($nowStore);
@@ -30,7 +30,7 @@
             weekday: 'short'
         });
 
-        return scheduleItems.map((item) => {
+        return extendedAggregateSchedule.items.map((item) => {
             const itemStartDateParts = getLocalDateParts(item.startDate);
 
             return {
@@ -45,10 +45,16 @@
     });
 
     const shouldShowColumn = $derived({
-        group: isMultipleSchedules || scheduleType !== 'group',
-        lecturer: isMultipleSchedules || scheduleType !== 'lecturer',
-        room: isMultipleSchedules || scheduleType !== 'room',
-        extra: scheduleItems.some((item) => item.extra)
+        group:
+            extendedAggregateSchedule.headers.length > 1 ||
+            extendedAggregateSchedule.type !== 'group',
+        lecturer:
+            extendedAggregateSchedule.headers.length > 1 ||
+            extendedAggregateSchedule.type !== 'lecturer',
+        room:
+            extendedAggregateSchedule.headers.length > 1 ||
+            extendedAggregateSchedule.type !== 'room',
+        extra: extendedAggregateSchedule.items.some((item) => item.extra)
     });
 </script>
 
@@ -94,7 +100,7 @@
     <tbody class="text-xxs sm:text-xs md:text-sm lg:text-base">
         {#each extendedScheduleItems as item}
             <tr
-                class={`${item.isCancelled || item.isFinished ? ' text-secondary' : ''}${item.isCurrentDay ? ' bg-accent-muted' : ''}${item.isInProgress ? ' border-2 border-accent-highlight' : ' border-b-tertiary border-b'}`}
+                class={`${(item.isFinished && extendedAggregateSchedule.period === 'upcoming') || item.resolvedType === 'cancelled' ? ' text-secondary' : ''}${item.isInProgress ? ' border-2 border-accent-highlight' : ' border-b border-b-tertiary'}`}
             >
                 <td class={TABLE_CELL_BASE_CLASS}>
                     {item.dateLabel}

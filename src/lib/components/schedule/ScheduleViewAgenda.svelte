@@ -3,7 +3,7 @@
     import * as m from '$lib/paraglide/messages';
     import type {
         ExtendedScheduleItem,
-        ResolvedScheduleItemType,
+        ResolvedExtendedScheduleItemType,
         ScheduleViewComponentProps
     } from '$lib/types';
     import { UEK_TIME_ZONE } from '$lib/consts';
@@ -15,16 +15,16 @@
 
     const { nowStore } = getGlobalContext();
 
-    const { headers, scheduleType, scheduleItems }: ScheduleViewComponentProps = $props();
+    const { extendedAggregateSchedule }: ScheduleViewComponentProps = $props();
 
     const sortedItemGroups = $derived.by(() => {
-        if (scheduleItems.length === 0) {
+        if (extendedAggregateSchedule.items.length === 0) {
             return [];
         }
 
         const hasMultipleYears =
-            getLocalDateParts(scheduleItems[0]!.startDate).year !==
-            getLocalDateParts(scheduleItems.at(-1)!.startDate).year;
+            getLocalDateParts(extendedAggregateSchedule.items[0]!.startDate).year !==
+            getLocalDateParts(extendedAggregateSchedule.items.at(-1)!.startDate).year;
 
         const monthHeaderFormatter = new Intl.DateTimeFormat(languageTag(), {
             timeZone: UEK_TIME_ZONE,
@@ -50,7 +50,7 @@
         }[];
 
         let previousItemStartDateParts: ReturnType<typeof getLocalDateParts> | undefined;
-        for (const item of scheduleItems) {
+        for (const item of extendedAggregateSchedule.items) {
             const itemStartDateParts = getLocalDateParts(item.startDate);
 
             if (
@@ -93,7 +93,7 @@
                                 language: 'bg-green-600',
                                 seminar: 'bg-indigo-700',
                                 exam: 'bg-red-500'
-                            } satisfies Partial<Record<ResolvedScheduleItemType, string>>
+                            } satisfies Partial<Record<ResolvedExtendedScheduleItemType, string>>
                         )[item.resolvedType as string] ?? 'border-2 border-zinc-300 bg-black'
                 });
         }
@@ -124,13 +124,22 @@
                         <ul class="col-span-10 lg:col-span-11">
                             {#each dayGroup.items as item}
                                 <li
-                                    class={`relative my-4 grid grid-cols-12 items-center gap-y-0.5 sm:items-start${item.isFinished || item.isCancelled ? ' opacity-70 transition-opacity hover:opacity-100' : ''}`}
+                                    class={`relative my-4 grid grid-cols-12 items-center gap-y-0.5 sm:items-start${(item.isFinished && extendedAggregateSchedule.period === 'upcoming') || item.resolvedType === 'cancelled' ? ' opacity-80 transition-opacity hover:opacity-100' : ''}`}
                                 >
-                                    {#if item.isInProgress}
+                                    {#if item.isInProgress || item.isFirstUpcoming}
                                         <div
-                                            class="pointer-events-none absolute bottom-[-10%] left-[-2.5%] h-[120%] w-[105%] animate-pulse rounded-lg border-2 border-accent-default"
+                                            class={`${item.isInProgress ? 'animate-pulse ' : ''}pointer-events-none absolute -left-3 bottom-0 h-full border-l-4 border-accent-default`}
                                             aria-hidden="true"
                                         ></div>
+                                        <span
+                                            class={`${item.isInProgress ? 'animate-pulse ' : ''}col-span-full my-0.5 font-bold text-accent first-letter:capitalize lg:my-1 lg:text-lg`}
+                                        >
+                                            {#if item.isInProgress}
+                                                {m.scheduleItemInProgress()}
+                                            {:else}
+                                                {item.startDateRelativeTimeLabel}
+                                            {/if}
+                                        </span>
                                     {/if}
 
                                     <span
@@ -140,7 +149,11 @@
                                             class={`${item.typeCircleClass} h-4 w-4 rounded-full sm:h-5 sm:w-5`}
                                             aria-hidden="true"
                                         ></div>
-                                        <span class={item.isCancelled ? 'line-through' : ''}>
+                                        <span
+                                            class={item.resolvedType === 'cancelled'
+                                                ? 'line-through'
+                                                : ''}
+                                        >
                                             {item.hourRangeLabel}
                                         </span>
                                     </span>
@@ -196,7 +209,7 @@
                                             </span>
                                         {/if}
 
-                                        {#if headers.length > 1 || scheduleType !== 'group' || item.groups.length > 1}
+                                        {#if extendedAggregateSchedule.headers.length > 1 || extendedAggregateSchedule.type !== 'group' || item.groups.length > 1}
                                             <span class="flex items-center gap-1.5 text-xs">
                                                 <Icon
                                                     class="max-h-3 max-w-3"
@@ -214,7 +227,7 @@
                                                     target="_blank"
                                                     rel="noopener"
                                                     title={item.room.name}
-                                                    class="border-tertiary mt-1 rounded-lg border bg-primary px-4 py-2 text-sm transition-colors first-letter:capitalize hover:border-accent-default hover:underline focus:border-accent-default focus:underline"
+                                                    class="mt-1 rounded-lg border border-tertiary bg-primary px-4 py-2 text-sm transition-colors first-letter:capitalize hover:border-accent-default hover:underline focus:border-accent-default focus:underline"
                                                 >
                                                     {item.room.name}
                                                 </a>

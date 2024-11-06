@@ -1,5 +1,5 @@
 import * as m from '$lib/paraglide/messages';
-import type { OriginalScheduleType, ScheduleType, ScheduleView } from '$lib/types';
+import type { OriginalScheduleType, ScheduleType, SchedulePeriod, ScheduleView } from '$lib/types';
 
 export const REPO_URL = 'https://github.com/szczursonn/uek-planzajec-v2';
 export const UEK_TIME_ZONE = 'Europe/Warsaw';
@@ -32,7 +32,33 @@ export const SCHEDULE_TYPE_TO_LABELS = {
     }
 } as const satisfies Record<ScheduleType, unknown>;
 
-export const DEFAULT_SCHEDULE_PERIOD = 0;
+export const SCHEDULE_PERIODS = [
+    'upcoming',
+    'currentSemester',
+    'currentYear',
+    'previousYear'
+] as const;
+
+export const SCHEDULE_PERIOD_TO_CONFIG = {
+    upcoming: {
+        label: m.periodOptionUpcoming,
+        originalId: 3
+    },
+    currentSemester: {
+        label: m.periodOptionFullSemester,
+        originalId: 2
+    },
+    currentYear: {
+        label: m.periodOptionFullYear,
+        originalId: 3
+    },
+    previousYear: {
+        label: m.periodOptionPastYear,
+        originalId: 4
+    }
+} as const satisfies Record<SchedulePeriod, unknown>;
+
+export const DEFAULT_SCHEDULE_PERIOD = 'upcoming' satisfies SchedulePeriod;
 
 export const SCHEDULE_VIEWS = ['agenda', 'week', 'table', 'ical'] as const;
 export const DEFAULT_SCHEDULE_VIEW = {

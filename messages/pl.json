@@ -64,7 +64,6 @@
     "useThisLinkForGoogleCalendarMessage": "Dodaj ten adres do Kalendarza Google lub innego kalendarza wspierającego format ICal",
     "youCanAlsoSeperateLinksForGoogleCalendar": "Możesz również dodać każdy plan zajęć osobno",
     "howToAddToGoogleCalendar": "Jak dodać plany zajęć do Kalendarza Google?",
-    "scheduleChangePeriodHint": "Chcesz zobaczyć resztę planu zajęć? Zmień okres czasu na górze strony (obecnie: {current})",
     "cookiePreferences": "Preferencje dot. plików cookie",
     "cookieNoticeBannerTitle": "Ta strona używa plików cookie.",
     "cookieNoticeBannerTitleUpdated": "Polityka dotycząca plików cookie została zaktualizowana.",
@@ -79,5 +78,10 @@
     "snackbarScheduleRemoveMessage": "{scheduleSet} został usunięty z zapisanych planów zajęć.",
     "snackbarCookieAcceptMessage": "Zaakceptowano pliki cookies.",
     "snackbarCookieRejectMessage": "Odrzucono pliki cookies.",
-    "snackbarClose": "Zamknij"
+    "snackbarClose": "Zamknij",
+    "periodOptionUpcoming": "Nadchodzące zajęcia",
+    "periodOptionFullSemester": "Obecny semestr",
+    "periodOptionFullYear": "Obecny rok",
+    "periodOptionPastYear": "Poprzedni rok",
+    "scheduleItemInProgress": "W toku"
 }

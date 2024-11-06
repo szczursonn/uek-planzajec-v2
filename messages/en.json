@@ -64,7 +64,6 @@
     "useThisLinkForGoogleCalendarMessage": "Add this link to Google Calendar or other calendar supporting the ICal format",
     "youCanAlsoSeperateLinksForGoogleCalendar": "You can also add each schedule seperately",
     "howToAddToGoogleCalendar": "How to add the schedules to Google Calendar?",
-    "scheduleChangePeriodHint": "Do you want to see the rest of the schedule? Change the schedule period on the top of the page (current: {current})",
     "cookiePreferences": "Cookie preferences",
     "cookieNoticeBannerTitle": "This site uses cookies to enhance your experience.",
     "cookieNoticeBannerTitleUpdated": "The site's cookie policy has been updated.",
@@ -79,5 +78,10 @@
     "snackbarScheduleRemoveMessage": "{scheduleSet} has been removed from saved schedules.",
     "snackbarCookieAcceptMessage": "Cookies have been accepted.",
     "snackbarCookieRejectMessage": "Cookies have been rejected.",
-    "snackbarClose": "Close"
+    "snackbarClose": "Close",
+    "periodOptionUpcoming": "Upcoming classes",
+    "periodOptionFullSemester": "Current semester",
+    "periodOptionFullYear": "Current year",
+    "periodOptionPastYear": "Previous year",
+    "scheduleItemInProgress": "In Progress"
 }

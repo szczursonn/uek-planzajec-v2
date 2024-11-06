@@ -1,10 +1,11 @@
 import {
     DEFAULT_SCHEDULE_PERIOD,
     DEFAULT_SCHEDULE_TYPE,
+    SCHEDULE_PERIOD_TO_CONFIG,
     SCHEDULE_TYPE_NORMALIZED_TO_ORIGINAL,
     SEARCH_PARAM
 } from '$lib/consts';
-import type { PickerState, ScheduleType, ScheduleView } from '$lib/types';
+import type { PickerState, SchedulePeriod, ScheduleType, ScheduleView } from '$lib/types';
 import { encodePickerState } from '$lib/storeUtils';
 
 export const createSchedulePickerURL = ({
@@ -37,18 +38,18 @@ export const createSchedulePickerURL = ({
 export const createScheduleURL = ({
     scheduleType,
     scheduleIds,
-    periodIndex = DEFAULT_SCHEDULE_PERIOD,
+    schedulePeriod = DEFAULT_SCHEDULE_PERIOD,
     scheduleView
 }: {
     scheduleType: ScheduleType;
     scheduleIds: string[];
-    periodIndex?: number;
+    schedulePeriod?: SchedulePeriod;
     scheduleView?: ScheduleView;
 }) => {
     let url = `/schedule/${encodeURIComponent(scheduleType)}/${encodeURIComponent(scheduleIds.join('_'))}`;
 
-    if (periodIndex !== DEFAULT_SCHEDULE_PERIOD || scheduleView) {
-        url += `/${periodIndex}`;
+    if (schedulePeriod !== DEFAULT_SCHEDULE_PERIOD || scheduleView) {
+        url += `/${schedulePeriod}`;
 
         if (scheduleView) {
             url += `/${scheduleView}`;
@@ -65,13 +66,13 @@ export const createOriginalURL = ({
     scheduleType,
     grouping,
     scheduleId,
-    periodIndex,
+    schedulePeriod,
     xml = false
 }: {
     scheduleType?: ScheduleType;
     grouping?: string;
     scheduleId?: string;
-    periodIndex?: number;
+    schedulePeriod?: SchedulePeriod;
     xml?: boolean;
 } = {}) => {
     const url = new URL('https://planzajec.uek.krakow.pl/index.php');
@@ -88,8 +89,11 @@ export const createOriginalURL = ({
         url.searchParams.set('id', scheduleId);
     }
 
-    if (periodIndex !== undefined) {
-        url.searchParams.set('okres', (periodIndex + 1).toString());
+    if (schedulePeriod) {
+        url.searchParams.set(
+            'okres',
+            SCHEDULE_PERIOD_TO_CONFIG[schedulePeriod].originalId.toString()
+        );
     }
 
     if (xml) {

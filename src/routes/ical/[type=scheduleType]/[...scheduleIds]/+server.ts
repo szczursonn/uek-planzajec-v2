@@ -4,10 +4,8 @@ import ical, { ICalEventStatus } from 'ical-generator';
 import { createUEKService } from '$lib/server/uekService';
 import { scheduleIdSchema, scheduleTypeSchema } from '$lib/server/schema';
 import { MAX_SELECTABLE_SCHEDULES } from '$lib/consts';
-import { isScheduleItemCancelled, mergeMultipleScheduleItems } from '$lib/utils';
+import { resolveScheduleItemType } from '$lib/utils';
 import { createMoodleURL, createScheduleURL } from '$lib/linkUtils';
-
-const FULL_SCHEDULE_PERIOD_INDEX = 2;
 
 export const GET = async (ctx) => {
     const paramsParseResult = z
@@ -23,32 +21,28 @@ export const GET = async (ctx) => {
         error(400);
     }
 
-    const uekService = createUEKService(ctx.platform);
-
-    const schedules = await Promise.all(
-        paramsParseResult.data.scheduleIds.map((scheduleId) =>
-            uekService.getSchedule({
-                scheduleId,
-                scheduleType: paramsParseResult.data.type,
-                periodIndex: FULL_SCHEDULE_PERIOD_INDEX
-            })
-        )
-    );
+    const aggregateSchedule = await createUEKService(ctx.platform).getAggregateSchedule({
+        scheduleIds: paramsParseResult.data.scheduleIds,
+        scheduleType: paramsParseResult.data.type,
+        schedulePeriod: 'currentYear',
+        now: new Date()
+    });
 
     const calendar = ical({
-        name: `UEK - ${schedules.map((schedule) => schedule.name).join(', ')}`,
+        name: `UEK - ${aggregateSchedule.headers.map((scheduleHeader) => scheduleHeader.name).join(', ')}`,
         url:
             ctx.url.origin +
             createScheduleURL({
                 scheduleIds: paramsParseResult.data.scheduleIds,
                 scheduleType: paramsParseResult.data.type,
-                periodIndex: FULL_SCHEDULE_PERIOD_INDEX
+                schedulePeriod: 'currentYear'
             }),
-        events: mergeMultipleScheduleItems(schedules).map((item) => ({
+        events: aggregateSchedule.items.map((item) => ({
             summary: `[${item.type}] ${item.subject}`,
-            status: isScheduleItemCancelled(item)
-                ? ICalEventStatus.CANCELLED
-                : ICalEventStatus.CONFIRMED,
+            status:
+                resolveScheduleItemType(item.type) === 'cancelled'
+                    ? ICalEventStatus.CANCELLED
+                    : ICalEventStatus.CONFIRMED,
             categories: [{ name: item.type }],
             start: item.start,
             end: item.end,

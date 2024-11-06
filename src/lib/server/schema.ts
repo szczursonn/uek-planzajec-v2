@@ -2,6 +2,7 @@ import { z } from 'zod';
 import {
     MAX_SAVED_SCHEDULE_SETS,
     MAX_SELECTABLE_SCHEDULES,
+    SCHEDULE_PERIODS,
     SCHEDULE_TYPES,
     SCHEDULE_VIEWS
 } from '$lib/consts';
@@ -11,7 +12,8 @@ export const originalScheduleTypeSchema = z.enum(['G', 'N', 'S']);
 
 export const scheduleIdSchema = z.string().min(1).regex(/^\d+$/);
 export const scheduleNameSchema = z.string().min(1);
-export const scheduleSelectedPeriodSchema = z.number().int().nonnegative();
+
+export const schedulePeriodSchema = z.enum(SCHEDULE_PERIODS);
 
 export const scheduleGroupingSchema = z.object({
     name: scheduleNameSchema,
@@ -23,17 +25,23 @@ export const scheduleHeaderSchema = z.object({
     name: scheduleNameSchema
 });
 
-export const scheduleSchema = z
+export const aggregateScheduleSchema = z
     .object({
-        id: scheduleIdSchema,
+        headers: z
+            .array(
+                scheduleHeaderSchema.extend({
+                    moodleId: z.string().min(1).optional()
+                })
+            )
+            .min(1)
+            .max(MAX_SELECTABLE_SCHEDULES),
         type: scheduleTypeSchema,
-        name: scheduleNameSchema,
-        moodleId: z.optional(z.string().min(1)),
-        selectedPeriod: scheduleSelectedPeriodSchema,
-        periods: z.array(
+        period: schedulePeriodSchema,
+        periodOptions: z.array(
             z.object({
-                from: z.string().datetime(),
-                to: z.string().datetime()
+                id: schedulePeriodSchema,
+                start: z.string().datetime(),
+                end: z.string().datetime()
             })
         ),
         items: z.array(
@@ -58,19 +66,22 @@ export const scheduleSchema = z
                     groups: z.array(z.string().min(1)),
                     extra: z.string().min(1).optional()
                 })
-                .refine((item) => item.end >= item.start, 'end must be after start')
+                .refine((item) => item.end >= item.start, 'schedule item end must be after start')
         )
     })
     .refine(
-        (result) => result.periods.length > result.selectedPeriod,
-        'selectedPeriod should be an index of periods'
+        (aggregateSchedule) =>
+            aggregateSchedule.periodOptions.some(
+                (periodOption) => periodOption.id === aggregateSchedule.period
+            ),
+        'aggregate schedules period must be included in periodOptions'
     );
 
 export const scheduleViewSchema = z.enum(SCHEDULE_VIEWS);
 
 export const pickerStateSchema = z.object({
-    periodIndex: scheduleSelectedPeriodSchema,
-    scheduleIds: z.array(scheduleIdSchema).min(1).max(MAX_SELECTABLE_SCHEDULES)
+    scheduleIds: z.array(scheduleIdSchema).min(1).max(MAX_SELECTABLE_SCHEDULES),
+    schedulePeriod: schedulePeriodSchema
 });
 
 export const savedScheduleSetsSchema = z.record(

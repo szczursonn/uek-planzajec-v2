@@ -31,8 +31,7 @@ export default {
                 warn: colors.yellow[800],
                 accent: {
                     default: colors.blue[500],
-                    highlight: colors.blue[600],
-                    muted: colors.blue[900]
+                    highlight: colors.blue[600]
                 }
             },
             borderColor: {
