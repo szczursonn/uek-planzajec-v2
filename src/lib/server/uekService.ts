@@ -376,7 +376,7 @@ const processScheduleResponses = ({
                 headers: xmlSchedules.map((xmlSchedule) => ({
                     id: xmlSchedule['plan-zajec']['@_id'],
                     name: xmlSchedule['plan-zajec']['@_nazwa'],
-                    moodleId: xmlSchedule['plan-zajec']['@_idcel']
+                    moodleId: xmlSchedule['plan-zajec']['@_idcel']?.substring(1)
                 })),
                 type: scheduleType,
                 period: selectedSchedulePeriod,
