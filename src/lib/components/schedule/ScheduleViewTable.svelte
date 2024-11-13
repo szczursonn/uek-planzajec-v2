@@ -31,15 +31,13 @@
         });
 
         return extendedAggregateSchedule.items.map((item) => {
-            const itemStartDateParts = getLocalDateParts(item.startDate);
-
             return {
                 ...item,
                 dateLabel: itemDateFormatter.formatRange(item.startDate, item.endDate),
-                isCurrentDay:
-                    currentDateParts.day === itemStartDateParts.day &&
-                    currentDateParts.month === itemStartDateParts.month &&
-                    currentDateParts.year === itemStartDateParts.year
+                isCurrentDay2:
+                    currentDateParts[0] === item.startParts[0] &&
+                    currentDateParts[1] === item.startParts[1] &&
+                    currentDateParts[2] === item.startParts[2]
             };
         });
     });
@@ -123,6 +121,7 @@
                                     })}
                                     target="_blank"
                                     rel="noopener"
+                                    data-no-translate
                                 >
                                     <img
                                         src={moodleLecturerLinkIcon}
@@ -144,6 +143,7 @@
                                 title={item.room.name}
                                 target="_blank"
                                 rel="noopener"
+                                data-no-translate
                             >
                                 {item.room.name}
                             </a>

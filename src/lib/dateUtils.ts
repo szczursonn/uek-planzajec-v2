@@ -1,5 +1,6 @@
 import { UEK_TIME_ZONE } from '$lib/consts';
-import { prefixNumberWithZero } from '$lib/utils';
+import { areDatePartsEqualWithoutTime, compareDateParts, prefixNumberWithZero } from '$lib/utils';
+import type { DateParts } from '$lib/types';
 
 const DATE_LOOP_STEP = 1000 * 60 * 60 * 12; //12h
 const TIME_LOOP_STEP = 1000 * 60 * 15; // 15m
@@ -36,7 +37,7 @@ export const getPreviousMonday = (date: Date) => {
         previousMonday.setTime(previousMonday.getTime() - DATE_LOOP_STEP);
     }
 
-    return removeLocalTime(previousMonday);
+    return getDateWithoutLocalTime(previousMonday);
 };
 export const getNextSunday = (date: Date) => {
     const nextSunday = new Date(date);
@@ -45,111 +46,105 @@ export const getNextSunday = (date: Date) => {
         nextSunday.setTime(nextSunday.getTime() + DATE_LOOP_STEP);
     }
 
-    return removeLocalTime(nextSunday);
+    return getDateWithoutLocalTime(nextSunday);
 };
 
-export const getLocalDateParts = (() => {
-    const datePartsFormatter = new Intl.DateTimeFormat('en-US', {
-        timeZone: UEK_TIME_ZONE,
-        year: 'numeric',
-        month: 'numeric',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: 'numeric',
-        weekday: 'short',
-        hour12: false
-    });
+const localDatePartsFormatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: UEK_TIME_ZONE,
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    weekday: 'short',
+    hour12: false
+});
 
-    const partTypeToIndex = datePartsFormatter.formatToParts(new Date(0)).reduce(
-        (map, part, i) => ({
-            ...map,
-            [part.type]: i
-        }),
-        {} as Record<Intl.DateTimeFormatPart['type'], number>
-    );
+const localDatePartTypeToIndex = localDatePartsFormatter.formatToParts(new Date(0)).reduce(
+    (map, part, i) => ({
+        ...map,
+        [part.type]: i
+    }),
+    {} as Record<Intl.DateTimeFormatPart['type'], number>
+);
 
-    return (date: Date) => {
-        const parts = datePartsFormatter.formatToParts(date);
-        return {
-            minute: parseInt(parts[partTypeToIndex.minute]!.value),
-            hour: parseInt(parts[partTypeToIndex.hour]!.value),
-            day: parseInt(parts[partTypeToIndex.day]!.value),
-            month: parseInt(parts[partTypeToIndex.month]!.value),
-            year: parseInt(parts[partTypeToIndex.year]!.value)
-        };
-    };
-})();
+export const getLocalDateParts = (date: Date) => {
+    const parts = localDatePartsFormatter.formatToParts(date);
 
-export function* eachLocalDayBetween(start: Date, end: Date) {
-    const endDateParts = getLocalDateParts(end);
-    let currentDate = new Date(start);
+    return [
+        parseInt(parts[localDatePartTypeToIndex.year]!.value),
+        parseInt(parts[localDatePartTypeToIndex.month]!.value),
+        parseInt(parts[localDatePartTypeToIndex.day]!.value),
+        parseInt(parts[localDatePartTypeToIndex.hour]!.value),
+        parseInt(parts[localDatePartTypeToIndex.minute]!.value)
+    ] as DateParts;
+};
 
-    let lastYieldedDateParts: ReturnType<typeof getLocalDateParts> | undefined;
+const isLastDayOfMonth = (dateParts: DateParts) => {
+    if (dateParts[1] === 2) {
+        if (dateParts[0] % 4 === 0 && dateParts[0] % 100 !== 0) {
+            return dateParts[2] === 29;
+        } else {
+            return dateParts[2] === 28;
+        }
+    }
+
+    if (
+        dateParts[1] === 1 ||
+        dateParts[1] === 3 ||
+        dateParts[1] === 5 ||
+        dateParts[1] === 7 ||
+        dateParts[1] === 8 ||
+        dateParts[1] === 10 ||
+        dateParts[1] === 12
+    ) {
+        return dateParts[2] === 31;
+    }
+
+    return dateParts[2] === 30;
+};
+
+export function* eachDatePartsBetween(startParts: DateParts, endParts: DateParts) {
+    const currentParts = [startParts[0], startParts[1], startParts[2], 0, 0] as DateParts;
+
     while (true) {
-        const currentDateParts = getLocalDateParts(currentDate);
+        yield currentParts;
 
-        if (
-            lastYieldedDateParts?.day !== currentDateParts.day ||
-            lastYieldedDateParts.month !== currentDateParts.month ||
-            lastYieldedDateParts.year !== currentDateParts.year
-        ) {
-            lastYieldedDateParts = currentDateParts;
-            currentDate = removeLocalTime(currentDate);
-            yield currentDate;
+        if (areDatePartsEqualWithoutTime(currentParts, endParts)) {
+            break;
         }
 
-        currentDate.setTime(currentDate.getTime() + DATE_LOOP_STEP);
+        if (isLastDayOfMonth(currentParts)) {
+            currentParts[2] = 1;
 
-        if (
-            currentDateParts.day === endDateParts.day &&
-            currentDateParts.month === endDateParts.month &&
-            currentDateParts.year === endDateParts.year
-        ) {
-            break;
+            if (currentParts[1] === 12) {
+                currentParts[0]++;
+                currentParts[1] = 1;
+            } else {
+                currentParts[1]++;
+            }
+        } else {
+            currentParts[2]++;
         }
     }
 }
 
-export const getDateFromLocalParts = ({
-    year,
-    month,
-    day,
-    hour = 0,
-    minute = 0
-}: {
-    year: number;
-    month: number;
-    day: number;
-    hour?: number;
-    minute?: number;
-}) => {
+export const getDateFromLocalParts = (dateParts: DateParts) => {
     // Parse the date as if it was UTC
     const itemDate = new Date(
-        `${year}-${prefixNumberWithZero(month)}-${prefixNumberWithZero(day)}T${prefixNumberWithZero(hour)}:${prefixNumberWithZero(minute)}:00.000Z`
+        `${dateParts[0]}-${prefixNumberWithZero(dateParts[1])}-${prefixNumberWithZero(dateParts[2])}T${prefixNumberWithZero(dateParts[3])}:${prefixNumberWithZero(dateParts[4])}:00.000Z`
     );
 
     // Offset the date by timezone's offset for that date (may be inaccurate if DST boundary has been crossed)
     itemDate.setTime(itemDate.getTime() - getTimezoneOffset(itemDate));
 
-    // Change the date a little bit at a time to fix the inaccuracy
+    // Change the date a little bit at a time to fix the inaccuracy (super inefficient)
     while (true) {
-        const currentDateParts = getLocalDateParts(itemDate);
+        const compareDatePartsResult = compareDateParts(dateParts, getLocalDateParts(itemDate));
 
-        if (
-            currentDateParts.minute < minute ||
-            currentDateParts.hour < hour ||
-            currentDateParts.day < day ||
-            currentDateParts.month < month ||
-            currentDateParts.year < year
-        ) {
+        if (compareDatePartsResult === 1) {
             itemDate.setTime(itemDate.getTime() + TIME_LOOP_STEP);
-        } else if (
-            currentDateParts.minute > minute ||
-            currentDateParts.hour > hour ||
-            currentDateParts.day > day ||
-            currentDateParts.month > month ||
-            currentDateParts.year > year
-        ) {
+        } else if (compareDatePartsResult === -1) {
             itemDate.setTime(itemDate.getTime() - TIME_LOOP_STEP);
         } else {
             break;
@@ -159,15 +154,17 @@ export const getDateFromLocalParts = ({
     return itemDate;
 };
 
-export const removeLocalTime = (date: Date) => {
+export const getDateWithoutLocalTime = (date: Date) => {
     const localDateParts = getLocalDateParts(date);
     // optimization: do not call getDateFromLocalParts unnecessarily
-    if (localDateParts.hour !== 0 || localDateParts.minute !== 0) {
-        return getDateFromLocalParts({
-            ...getLocalDateParts(date),
-            hour: 0,
-            minute: 0
-        });
+    if (localDateParts[3] !== 0 || localDateParts[4] !== 0) {
+        return getDateFromLocalParts([
+            localDateParts[0],
+            localDateParts[1],
+            localDateParts[2],
+            0,
+            0
+        ]);
     }
 
     return date;

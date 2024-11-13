@@ -42,7 +42,7 @@ export const SCHEDULE_PERIODS = [
 export const SCHEDULE_PERIOD_TO_CONFIG = {
     upcoming: {
         label: m.periodOptionUpcoming,
-        originalId: 3
+        originalId: 2
     },
     currentSemester: {
         label: m.periodOptionFullSemester,
@@ -134,3 +134,5 @@ export const SCHEDULE_ITEM_RESOLVED_TYPE_MAPPING = {
     egzamin: 'exam',
     'Przeniesienie zajęć': 'cancelled'
 } as const;
+
+export const LOAD_FN_PERFORMANCE_HEADER = 'X-UEK-LoadTime';

@@ -39,6 +39,7 @@
         title={m.howToAddToGoogleCalendar()}
         target="_blank"
         rel="noopener"
+        data-no-translate
         class="text-accent hover:underline"
     >
         {m.howToAddToGoogleCalendar()}

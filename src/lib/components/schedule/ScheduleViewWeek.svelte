@@ -1,3 +1,15 @@
+<script lang="ts" module>
+    const DEFAULT_CLASS = 'bg-secondary border-gray-900 border-2';
+    const RESOLVED_ITEM_TYPE_TO_CLASS = {
+        lecture: 'bg-sky-800 border-sky-900',
+        exercise: 'bg-amber-800 border-amber-900',
+        language: 'bg-green-700 border-green-900',
+        seminar: 'bg-indigo-700 border-indigo-900',
+        exam: 'bg-red-700 border-red-900',
+        cancelled: `${DEFAULT_CLASS} text-secondary`
+    } as const satisfies Record<ResolvedExtendedScheduleItemType, string>;
+</script>
+
 <script lang="ts">
     import { languageTag } from '$lib/paraglide/runtime';
     import * as m from '$lib/paraglide/messages';
@@ -8,15 +20,17 @@
     } from '$lib/types';
     import { UEK_TIME_ZONE } from '$lib/consts';
     import {
-        eachLocalDayBetween,
+        eachDatePartsBetween,
         getNextSunday,
         getPreviousMonday,
-        getLocalDateParts
+        getLocalDateParts,
+        getDateFromLocalParts
     } from '$lib/dateUtils';
     import { createMoodleURL } from '$lib/linkUtils';
     import { getGlobalContext } from '$lib/stores/globalContext';
     import Icon from '$lib/components/Icon.svelte';
     import moodleLecturerLinkIcon from '$lib/assets/moodleLecturerLinkIcon.jpg';
+    import { areDatePartsEqualWithoutTime, getRelativeTimeLabel } from '$lib/utils';
 
     const { nowStore } = getGlobalContext();
 
@@ -37,7 +51,7 @@
 
         const dayGroups: {
             label: string;
-            items: (ExtendedScheduleItem & { typeContainerClass: string })[];
+            items: ExtendedScheduleItem[];
             isOutsideOfSelectedPeriod: boolean;
             isCurrent: boolean;
         }[] = [];
@@ -45,75 +59,50 @@
         const currentDateParts = getLocalDateParts($nowStore);
 
         let i = 0;
-        let previousDateParts: ReturnType<typeof getLocalDateParts> | undefined;
-        for (const date of eachLocalDayBetween(
-            getPreviousMonday(
-                new Date(
-                    Math.min(
-                        periodStartDate.getTime(),
-                        extendedAggregateSchedule.items[0]!.startDate.getTime()
+        for (const dateParts of eachDatePartsBetween(
+            getLocalDateParts(
+                getPreviousMonday(
+                    new Date(
+                        Math.min(
+                            periodStartDate.getTime(),
+                            extendedAggregateSchedule.items[0]!.startDate.getTime()
+                        )
                     )
                 )
             ),
-            getNextSunday(
-                new Date(
-                    Math.max(
-                        periodEndDate.getTime(),
-                        extendedAggregateSchedule.items.at(-1)!.endDate.getTime()
+            getLocalDateParts(
+                getNextSunday(
+                    new Date(
+                        Math.max(
+                            periodEndDate.getTime(),
+                            extendedAggregateSchedule.items.at(-1)!.endDate.getTime()
+                        )
                     )
                 )
             )
         )) {
-            const dateParts = getLocalDateParts(date);
+            const date = getDateFromLocalParts(dateParts);
 
-            if (
-                !previousDateParts ||
-                dateParts.day !== previousDateParts.day ||
-                dateParts.month !== previousDateParts.month ||
-                dateParts.year !== previousDateParts.year
-            ) {
-                dayGroups.push({
-                    label: groupLabelFormatter.format(date),
-                    isOutsideOfSelectedPeriod:
-                        date.getTime() < periodStartDate.getTime() ||
-                        date.getTime() > periodEndDate.getTime(),
-                    isCurrent:
-                        currentDateParts.day === dateParts.day &&
-                        currentDateParts.month === dateParts.month &&
-                        currentDateParts.year === dateParts.year,
-                    items: []
-                });
-                previousDateParts = dateParts;
-            }
+            dayGroups.push({
+                label: groupLabelFormatter.format(date),
+                isOutsideOfSelectedPeriod:
+                    date.getTime() < periodStartDate.getTime() ||
+                    date.getTime() > periodEndDate.getTime(),
+                isCurrent: areDatePartsEqualWithoutTime(dateParts, currentDateParts),
+                items: []
+            });
 
             while (i < extendedAggregateSchedule.items.length) {
-                const itemStartDateParts = getLocalDateParts(
-                    extendedAggregateSchedule.items[i]!.startDate
-                );
-
                 if (
-                    itemStartDateParts.day !== dateParts.day ||
-                    itemStartDateParts.month !== dateParts.month ||
-                    itemStartDateParts.year !== dateParts.year
+                    !areDatePartsEqualWithoutTime(
+                        extendedAggregateSchedule.items[i]!.startParts,
+                        dateParts
+                    )
                 ) {
                     break;
                 }
 
-                dayGroups.at(-1)!.items.push({
-                    ...extendedAggregateSchedule.items[i]!,
-                    typeContainerClass:
-                        (
-                            {
-                                lecture: 'bg-sky-800 border-sky-900',
-                                exercise: 'bg-amber-800 border-amber-900',
-                                language: 'bg-green-700 border-green-900',
-                                seminar: 'bg-indigo-700 border-indigo-900',
-                                exam: 'bg-red-700 border-red-900',
-                                cancelled: 'bg-secondary border-gray-900 border-2 text-secondary'
-                            } satisfies Partial<Record<ResolvedExtendedScheduleItemType, string>>
-                        )[extendedAggregateSchedule.items[i]!.resolvedType as string] ??
-                        'bg-secondary border-gray-900 border-2'
-                });
+                dayGroups.at(-1)!.items.push(extendedAggregateSchedule.items[i]!);
                 i++;
             }
         }
@@ -133,7 +122,7 @@
             <ul class="flex flex-col gap-2">
                 {#each group.items as item}
                     <li
-                        class={`${item.typeContainerClass}${item.isFinished && extendedAggregateSchedule.period === 'upcoming' ? ' opacity-80 transition-opacity hover:opacity-100' : ''} relative flex flex-col gap-y-[1px] rounded-lg border-2 p-3 text-xs sm:p-1.5 sm:text-xxs lg:p-3 lg:text-xs`}
+                        class={`${item.resolvedType ? RESOLVED_ITEM_TYPE_TO_CLASS[item.resolvedType] : DEFAULT_CLASS}${item.isFinished && extendedAggregateSchedule.period === 'upcoming' ? ' opacity-80 transition-opacity hover:opacity-100' : ''} relative flex flex-col gap-y-[1px] rounded-lg border-2 p-3 text-xs sm:p-1.5 sm:text-xxs lg:p-3 lg:text-xs`}
                     >
                         {#if item.isInProgress || item.isFirstUpcoming}
                             <div
@@ -145,7 +134,7 @@
                                     {#if item.isInProgress}
                                         {m.scheduleItemInProgress()}
                                     {:else}
-                                        {item.startDateRelativeTimeLabel}
+                                        {getRelativeTimeLabel(item.startDate, $nowStore)}
                                     {/if}
                                 </div>
                             </div>
@@ -175,6 +164,7 @@
                                                 })}
                                                 target="_blank"
                                                 rel="noopener"
+                                                data-no-translate
                                             >
                                                 <img
                                                     src={moodleLecturerLinkIcon}
@@ -204,6 +194,7 @@
                                         rel="noopener"
                                         title={item.room.name}
                                         class="mt-2 rounded-lg border border-primary px-4 py-2 text-sm transition-colors first-letter:capitalize hover:underline"
+                                        data-no-translate
                                     >
                                         {item.room.name}
                                     </a>

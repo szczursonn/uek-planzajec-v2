@@ -1,9 +1,22 @@
+<script lang="ts" module>
+    const DEFAULT_CLASS = 'border-2 border-zinc-300 bg-black';
+    const RESOLVED_ITEM_TYPE_TO_CLASS = {
+        lecture: 'bg-sky-600',
+        exercise: 'bg-amber-600',
+        language: 'bg-green-600',
+        seminar: 'bg-indigo-700',
+        exam: 'bg-red-500',
+        cancelled: DEFAULT_CLASS
+    } as const satisfies Record<ResolvedExtendedScheduleItemType, string>;
+</script>
+
 <script lang="ts">
     import { languageTag } from '$lib/paraglide/runtime';
     import * as m from '$lib/paraglide/messages';
     import type {
         ExtendedScheduleItem,
         ResolvedExtendedScheduleItemType,
+        ScheduleItem,
         ScheduleViewComponentProps
     } from '$lib/types';
     import { UEK_TIME_ZONE } from '$lib/consts';
@@ -12,6 +25,7 @@
     import { getGlobalContext } from '$lib/stores/globalContext';
     import Icon from '$lib/components/Icon.svelte';
     import moodleLecturerLinkIcon from '$lib/assets/moodleLecturerLinkIcon.jpg';
+    import { getRelativeTimeLabel } from '$lib/utils';
 
     const { nowStore } = getGlobalContext();
 
@@ -22,9 +36,10 @@
             return [];
         }
 
+        const currentDateParts = getLocalDateParts($nowStore);
         const hasMultipleYears =
-            getLocalDateParts(extendedAggregateSchedule.items[0]!.startDate).year !==
-            getLocalDateParts(extendedAggregateSchedule.items.at(-1)!.startDate).year;
+            extendedAggregateSchedule.items[0]!.startParts[0] !==
+            extendedAggregateSchedule.items.at(-1)!.startParts[0];
 
         const monthHeaderFormatter = new Intl.DateTimeFormat(languageTag(), {
             timeZone: UEK_TIME_ZONE,
@@ -37,30 +52,26 @@
             weekday: 'short'
         });
 
-        const currentDateParts = getLocalDateParts($nowStore);
-
         const monthGroups = [] as {
             monthHeader: string;
             dayGroups: {
                 dayOfMonth: number;
                 dayOfWeek: string;
                 isCurrent: boolean;
-                items: (ExtendedScheduleItem & { typeCircleClass: string })[];
+                items: ExtendedScheduleItem[];
             }[];
         }[];
 
-        let previousItemStartDateParts: ReturnType<typeof getLocalDateParts> | undefined;
+        let previousItem: ScheduleItem | undefined;
         for (const item of extendedAggregateSchedule.items) {
-            const itemStartDateParts = getLocalDateParts(item.startDate);
-
             if (
-                itemStartDateParts.day !== previousItemStartDateParts?.day ||
-                itemStartDateParts.month !== previousItemStartDateParts.month ||
-                itemStartDateParts.year !== previousItemStartDateParts.year
+                item.startParts[0] !== previousItem?.startParts[0] ||
+                item.startParts[1] !== previousItem?.startParts[1] ||
+                item.startParts[2] !== previousItem?.startParts[2]
             ) {
                 if (
-                    itemStartDateParts.month !== previousItemStartDateParts?.month ||
-                    itemStartDateParts.year !== previousItemStartDateParts.year
+                    item.startParts[0] !== previousItem?.startParts[0] ||
+                    item.startParts[1] !== previousItem?.startParts[1]
                 ) {
                     monthGroups.push({
                         monthHeader: monthHeaderFormatter.format(item.startDate),
@@ -69,33 +80,18 @@
                 }
 
                 monthGroups.at(-1)!.dayGroups.push({
-                    dayOfMonth: itemStartDateParts.day,
+                    dayOfMonth: item.startParts[2],
                     dayOfWeek: dayOfWeekFormatter.format(item.startDate),
                     isCurrent:
-                        itemStartDateParts.day === currentDateParts.day &&
-                        itemStartDateParts.month === currentDateParts.month &&
-                        itemStartDateParts.year === currentDateParts.year,
+                        item.startParts[0] === currentDateParts[0] &&
+                        item.startParts[1] === currentDateParts[1] &&
+                        item.startParts[2] === currentDateParts[2],
                     items: []
                 });
-                previousItemStartDateParts = itemStartDateParts;
+                previousItem = item;
             }
 
-            monthGroups
-                .at(-1)!
-                .dayGroups.at(-1)!
-                .items.push({
-                    ...item,
-                    typeCircleClass:
-                        (
-                            {
-                                lecture: 'bg-sky-600',
-                                exercise: 'bg-amber-600',
-                                language: 'bg-green-600',
-                                seminar: 'bg-indigo-700',
-                                exam: 'bg-red-500'
-                            } satisfies Partial<Record<ResolvedExtendedScheduleItemType, string>>
-                        )[item.resolvedType as string] ?? 'border-2 border-zinc-300 bg-black'
-                });
+            monthGroups.at(-1)!.dayGroups.at(-1)!.items.push(item);
         }
 
         return monthGroups;
@@ -137,7 +133,7 @@
                                             {#if item.isInProgress}
                                                 {m.scheduleItemInProgress()}
                                             {:else}
-                                                {item.startDateRelativeTimeLabel}
+                                                {getRelativeTimeLabel(item.startDate, $nowStore)}
                                             {/if}
                                         </span>
                                     {/if}
@@ -146,7 +142,7 @@
                                         class="col-span-full flex flex-row items-center gap-2 text-sm lg:col-span-2"
                                     >
                                         <div
-                                            class={`${item.typeCircleClass} h-4 w-4 rounded-full sm:h-5 sm:w-5`}
+                                            class={`${item.resolvedType ? RESOLVED_ITEM_TYPE_TO_CLASS[item.resolvedType] : DEFAULT_CLASS} h-4 w-4 rounded-full sm:h-5 sm:w-5`}
                                             aria-hidden="true"
                                         ></div>
                                         <span
@@ -179,6 +175,7 @@
                                                         })}
                                                         target="_blank"
                                                         rel="noopener"
+                                                        data-no-translate
                                                     >
                                                         <img
                                                             src={moodleLecturerLinkIcon}
@@ -227,6 +224,7 @@
                                                     target="_blank"
                                                     rel="noopener"
                                                     title={item.room.name}
+                                                    data-no-translate
                                                     class="mt-1 rounded-lg border border-tertiary bg-primary px-4 py-2 text-sm transition-colors first-letter:capitalize hover:border-accent-default hover:underline focus:border-accent-default focus:underline"
                                                 >
                                                     {item.room.name}
@@ -235,7 +233,7 @@
                                         {/if}
 
                                         {#if item.extra}
-                                            <hr class=" border-secondary" />
+                                            <hr class=" mt-1 border-secondary" />
                                             <span class="text-error">{item.extra}</span>
                                         {/if}
                                     </div>

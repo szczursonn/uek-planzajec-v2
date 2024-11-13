@@ -75,6 +75,7 @@
     </PageMetadata>
     <div class="flex min-h-screen flex-col items-center bg-primary font-inter text-primary">
         <PageProgressBar />
+
         <PageSnackbar />
         <div class="flex w-11/12 flex-col items-center 2xl:w-5/6 3xl:w-3/4">
             <PageHeader />

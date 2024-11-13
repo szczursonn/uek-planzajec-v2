@@ -1,10 +1,12 @@
 import { createUEKService } from '$lib/server/uekService';
 import { readPickerState } from '$lib/server/serverUtils';
 import type { ScheduleHeader, ScheduleType } from '$lib/types';
-import { DEFAULT_SCHEDULE_TYPE } from '$lib/consts';
+import { DEFAULT_SCHEDULE_TYPE, LOAD_FN_PERFORMANCE_HEADER } from '$lib/consts';
 import { layoutActions } from '$lib/layoutActions';
 
 export const load = async (ctx) => {
+    const loadStartTimestamp = Date.now();
+
     // ctx.params.type already validated by matcher
     const scheduleType = (ctx.params.type ?? DEFAULT_SCHEDULE_TYPE) as ScheduleType;
     const pickerState = readPickerState(ctx);
@@ -45,6 +47,10 @@ export const load = async (ctx) => {
                 .sort()
         };
     }
+
+    ctx.setHeaders({
+        [LOAD_FN_PERFORMANCE_HEADER]: (Date.now() - loadStartTimestamp).toString()
+    });
 
     return {
         scheduleType,

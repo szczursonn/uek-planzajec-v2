@@ -21,7 +21,7 @@
                 clearInterval(updateProgressInterval);
                 resetProgressTimeout = setTimeout(() => {
                     progress = 0;
-                }, 500);
+                }, 300);
             }
         });
 
@@ -30,7 +30,7 @@
 </script>
 
 <div
-    class={`${$navigating ? 'opacity-100' : 'opacity-0'} pointer-events-none fixed top-0 h-1 w-full bg-secondary bg-transparent transition-opacity duration-300`}
+    class={`${$navigating ? 'opacity-100' : 'opacity-0'} pointer-events-none fixed top-0 h-1 w-full bg-secondary bg-transparent transition-opacity duration-150`}
     role="progressbar"
     aria-hidden={!$navigating}
     aria-valuemin="0"
@@ -38,7 +38,7 @@
     aria-valuenow={progress}
 >
     <div
-        class="bg-accent-default h-1 rounded-r-full transition-width duration-500"
+        class="h-1 rounded-r-full bg-accent-default transition-width duration-500"
         style={`width: ${progress}%`}
     ></div>
 </div>

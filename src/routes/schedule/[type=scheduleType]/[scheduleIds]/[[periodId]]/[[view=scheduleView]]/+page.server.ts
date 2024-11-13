@@ -20,6 +20,7 @@ import {
     COOKIE_CONFIG,
     DEFAULT_SCHEDULE_PERIOD,
     DEFAULT_SCHEDULE_TYPE,
+    LOAD_FN_PERFORMANCE_HEADER,
     MAX_SELECTABLE_SCHEDULES,
     SEARCH_PARAM
 } from '$lib/consts';
@@ -33,6 +34,7 @@ import { layoutActions } from '$lib/layoutActions';
 import type { ScheduleType } from '$lib/types';
 import { createScheduleURL } from '$lib/linkUtils';
 import { isSavedScheduleSetLimitReached } from '$lib/utils';
+import { i18n } from '$lib/i18n';
 
 const pageParamsSchema = z.object({
     type: scheduleTypeSchema,
@@ -45,6 +47,8 @@ const pageParamsSchema = z.object({
 });
 
 export const load = async (ctx) => {
+    const loadStartTimestamp = Date.now();
+
     const pageParams = pageParamsSchema.parse(ctx.params);
 
     const aggregateSchedule = await createUEKService(ctx.platform).getAggregateSchedule({
@@ -52,6 +56,10 @@ export const load = async (ctx) => {
         scheduleType: pageParams.type,
         schedulePeriod: pageParams.periodId,
         now: new Date((await ctx.parent()).initialNowAsNumber)
+    });
+
+    ctx.setHeaders({
+        [LOAD_FN_PERFORMANCE_HEADER]: (Date.now() - loadStartTimestamp).toString()
     });
 
     return {
@@ -131,12 +139,14 @@ export const actions = {
 
         redirect(
             303,
-            createScheduleURL({
-                scheduleType: pageParams.type,
-                scheduleIds: pageParams.scheduleIds,
-                schedulePeriod: formData[SEARCH_PARAM.SCHEDULE.PERIOD],
-                scheduleView: formData[SEARCH_PARAM.SCHEDULE.VIEW]
-            })
+            i18n.resolveRoute(
+                createScheduleURL({
+                    scheduleType: pageParams.type,
+                    scheduleIds: pageParams.scheduleIds,
+                    schedulePeriod: formData[SEARCH_PARAM.SCHEDULE.PERIOD],
+                    scheduleView: formData[SEARCH_PARAM.SCHEDULE.VIEW]
+                })
+            )
         );
     }
 };

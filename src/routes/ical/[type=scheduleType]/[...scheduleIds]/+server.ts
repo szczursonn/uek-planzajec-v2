@@ -6,6 +6,7 @@ import { scheduleIdSchema, scheduleTypeSchema } from '$lib/server/schema';
 import { MAX_SELECTABLE_SCHEDULES } from '$lib/consts';
 import { resolveScheduleItemType } from '$lib/utils';
 import { createMoodleURL, createScheduleURL } from '$lib/linkUtils';
+import { getDateFromLocalParts } from '$lib/dateUtils';
 
 export const GET = async (ctx) => {
     const paramsParseResult = z
@@ -44,8 +45,8 @@ export const GET = async (ctx) => {
                     ? ICalEventStatus.CANCELLED
                     : ICalEventStatus.CONFIRMED,
             categories: [{ name: item.type }],
-            start: item.start,
-            end: item.end,
+            start: getDateFromLocalParts(item.startParts),
+            end: getDateFromLocalParts(item.endParts),
             location: item.room?.url ? 'Online' : item.room?.name,
             url: item.room?.url,
             organizer:

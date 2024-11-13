@@ -15,6 +15,15 @@ export const scheduleNameSchema = z.string().min(1);
 
 export const schedulePeriodSchema = z.enum(SCHEDULE_PERIODS);
 
+// year, month, day, hour, minute
+export const datePartsSchema = z.tuple([
+    z.number().min(1970),
+    z.number().min(1).max(12),
+    z.number().min(1).max(31),
+    z.number().min(0).max(23),
+    z.number().min(0).max(59)
+]);
+
 export const scheduleGroupingSchema = z.object({
     name: scheduleNameSchema,
     type: scheduleTypeSchema
@@ -40,33 +49,32 @@ export const aggregateScheduleSchema = z
         periodOptions: z.array(
             z.object({
                 id: schedulePeriodSchema,
-                start: z.string().datetime(),
-                end: z.string().datetime()
+                startParts: datePartsSchema,
+                endParts: datePartsSchema
             })
         ),
         items: z.array(
-            z
-                .object({
-                    start: z.string().datetime(),
-                    end: z.string().datetime(),
-                    subject: z.string(),
-                    type: z.string().min(1),
-                    room: z
-                        .object({
-                            name: z.string().min(1),
-                            url: z.string().url().optional()
-                        })
-                        .optional(),
-                    lecturers: z.array(
-                        z.object({
-                            name: z.string().min(1),
-                            moodleId: z.string().min(1).optional()
-                        })
-                    ),
-                    groups: z.array(z.string().min(1)),
-                    extra: z.string().min(1).optional()
-                })
-                .refine((item) => item.end >= item.start, 'schedule item end must be after start')
+            z.object({
+                startParts: datePartsSchema,
+                endParts: datePartsSchema,
+                subject: z.string(),
+                type: z.string().min(1),
+                room: z
+                    .object({
+                        name: z.string().min(1),
+                        url: z.string().url().optional()
+                    })
+                    .optional(),
+                lecturers: z.array(
+                    z.object({
+                        name: z.string().min(1),
+                        moodleId: z.string().min(1).optional()
+                    })
+                ),
+                groups: z.array(z.string().min(1)),
+                extra: z.string().min(1).optional()
+            })
+            // .refine((item) => item.end >= item.start, 'schedule item end must be after start')
         )
     })
     .refine(

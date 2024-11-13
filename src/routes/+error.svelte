@@ -19,6 +19,7 @@
         title={m.officialClassScheduleLinkTitle()}
         target="_blank"
         rel="noopener"
+        data-no-translate
     >
         {m.officialClassScheduleLinkTitle()}
     </a>

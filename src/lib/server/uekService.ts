@@ -6,9 +6,9 @@ import {
     aggregateScheduleSchema,
     originalScheduleTypeSchema
 } from '$lib/server/schema';
-import type { ScheduleType, SchedulePeriod, ScheduleItem } from '$lib/types';
-import { cutPostfix } from '$lib/utils';
-import { getDateFromLocalParts, getLocalDateParts, removeLocalTime } from '$lib/dateUtils';
+import type { ScheduleType, SchedulePeriod, ScheduleItem, DateParts } from '$lib/types';
+import { areDatePartsEqual, compareDateParts, cutPostfix } from '$lib/utils';
+import { getLocalDateParts, getDateWithoutLocalTime } from '$lib/dateUtils';
 import { createOriginalURL } from '$lib/linkUtils';
 import {
     SCHEDULE_PERIOD_TO_CONFIG,
@@ -83,25 +83,17 @@ const createXMLFetcher =
         return xmlParser.parse(await response.text()) as unknown;
     };
 
-const parseUEKDate = (dateString: string, timeString?: string) => {
+const getUEKDateParts = (dateString: string, timeString: string) => {
     const dateStringParts = dateString.split('-').map((part) => parseInt(part));
     const timeStringParts = timeString?.split(':').map((part) => parseInt(part)) ?? [];
 
-    if (dateStringParts.length < 3 || !dateStringParts.every((part) => isFinite(part))) {
-        throw new Error(`Invalid date string: ${dateString}`);
-    }
-
-    if (!timeStringParts.every((part) => isFinite(part))) {
-        throw new Error(`Invalid time string: ${timeString}`);
-    }
-
-    return getDateFromLocalParts({
-        year: dateStringParts[0]!,
-        month: dateStringParts[1]!,
-        day: dateStringParts[2]!,
-        hour: timeStringParts[0],
-        minute: timeStringParts[1]
-    });
+    return [
+        dateStringParts[0]!,
+        dateStringParts[1]!,
+        dateStringParts[2]!,
+        timeStringParts[0] ?? 0,
+        timeStringParts[1] ?? 0
+    ] as DateParts;
 };
 
 const parseScheduleGroupingsResponse = (xmlResponse: unknown) =>
@@ -225,19 +217,21 @@ const processScheduleResponses = ({
 
             const periodOptions = SCHEDULE_PERIODS.map((schedulePeriod) => ({
                 id: schedulePeriod,
-                start:
+                startParts:
                     schedulePeriod === 'upcoming'
-                        ? removeLocalTime(now).toISOString()
-                        : parseUEKDate(
+                        ? getLocalDateParts(getDateWithoutLocalTime(now))
+                        : getUEKDateParts(
                               xmlSchedules[0]!['plan-zajec'].okres[
                                   SCHEDULE_PERIOD_TO_CONFIG[schedulePeriod].originalId - 1
-                              ]!['@_od']
-                          ).toISOString(),
-                end: parseUEKDate(
+                              ]!['@_od'],
+                              '00:00'
+                          ),
+                endParts: getUEKDateParts(
                     xmlSchedules[0]!['plan-zajec'].okres[
                         SCHEDULE_PERIOD_TO_CONFIG[schedulePeriod].originalId - 1
-                    ]!['@_do']
-                ).toISOString()
+                    ]!['@_do'],
+                    '23:59'
+                )
             }));
             const selectedPeriodOption = periodOptions.find(
                 (periodOption) => periodOption.id === selectedSchedulePeriod
@@ -273,14 +267,14 @@ const processScheduleResponses = ({
                             }
 
                             return {
-                                start: parseUEKDate(
+                                startParts: getUEKDateParts(
                                     xmlScheduleItem.termin['#text'],
                                     xmlScheduleItem['od-godz']['#text']
-                                ).toISOString(),
-                                end: parseUEKDate(
+                                ),
+                                endParts: getUEKDateParts(
                                     xmlScheduleItem.termin['#text'],
                                     xmlScheduleItem['do-godz']['#text'].substring(0, 5)
-                                ).toISOString(),
+                                ),
                                 subject: xmlScheduleItem.przedmiot['#text'],
                                 type: xmlScheduleItem.typ['#text'],
                                 room,
@@ -320,10 +314,16 @@ const processScheduleResponses = ({
                         }) ?? []
                 )
                 .sort((a, b) => {
-                    if (a.start > b.start) {
+                    const compareDatePartsResult = compareDateParts(a.startParts, b.startParts);
+                    if (compareDatePartsResult !== 0) {
+                        return compareDatePartsResult;
+                    }
+
+                    if (a.subject > b.subject) {
                         return 1;
                     }
-                    if (a.start < b.start) {
+
+                    if (a.subject < b.subject) {
                         return -1;
                     }
 
@@ -340,8 +340,8 @@ const processScheduleResponses = ({
                             (item.room?.name !== 'Wybierz swoją grupę językową' &&
                                 (item.lecturers?.length !== 1 ||
                                     item.lecturers[0]?.name !== 'Językowe Centrum'))) &&
-                        selectedPeriodOption.start <= item.start &&
-                        selectedPeriodOption.end >= item.end
+                        compareDateParts(selectedPeriodOption.startParts, item.startParts) !== 1 &&
+                        compareDateParts(selectedPeriodOption.endParts, item.endParts) !== -1
                     ) {
                         const previousItem = items.at(-1);
 
@@ -349,8 +349,8 @@ const processScheduleResponses = ({
                             previousItem &&
                             previousItem.type === item.type &&
                             previousItem.subject === item.subject &&
-                            previousItem.start === item.start &&
-                            previousItem.end === item.end &&
+                            areDatePartsEqual(previousItem.startParts, item.startParts) &&
+                            areDatePartsEqual(previousItem.endParts, item.endParts) &&
                             previousItem.room?.name === item.room?.name &&
                             previousItem.room?.url === item.room?.url &&
                             previousItem.extra === item.extra &&
@@ -432,7 +432,7 @@ export const createUEKService = (platform?: App.Platform) => {
         }) {
             const nowParts = getLocalDateParts(now);
             // prevents scenario in which one of the schedules is cached from previous day and another one is fresh
-            const sameDayCacheKey = [nowParts.year, nowParts.month, nowParts.day].join('.');
+            const sameDayCacheKey = [nowParts[0], nowParts[1], nowParts[2]].join('.');
 
             return processScheduleResponses({
                 xmlResponses: await Promise.all(

@@ -6,10 +6,13 @@ import type {
     pickerStateSchema,
     originalScheduleTypeSchema,
     savedScheduleSetsSchema,
-    cookieConsentStateSchema
+    cookieConsentStateSchema,
+    datePartsSchema
 } from '$lib/server/schema';
 import type { createCookieStore } from '$lib/stores/cookieStore';
 import type { extendAggregateSchedule } from '$lib/utils';
+
+export type DateParts = typeof datePartsSchema._type;
 
 export type ScheduleType = (typeof SCHEDULE_TYPES)[number];
 export type OriginalScheduleType = typeof originalScheduleTypeSchema._type;

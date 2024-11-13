@@ -5,6 +5,7 @@
     "private": true,
     "scripts": {
         "dev": "vite dev",
+        "dev-inspect": "node --inspect --eval \"import('./node_modules/vite/bin/vite.js')\"",
         "build": "paraglide-js compile --project ./project.inlang --outdir ./src\\paraglide && vite build",
         "preview": "vite preview",
         "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",

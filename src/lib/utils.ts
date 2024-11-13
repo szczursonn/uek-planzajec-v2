@@ -1,7 +1,7 @@
 import { languageTag } from '$lib/paraglide/runtime';
 import * as m from '$lib/paraglide/messages';
 import { getAggregateScheduleKey } from '$lib/storeUtils';
-import type { AggregateSchedule, SavedScheduleSets } from '$lib/types';
+import type { AggregateSchedule, DateParts, SavedScheduleSets } from '$lib/types';
 import {
     MAX_SAVED_SCHEDULE_SETS,
     SCHEDULE_ITEM_RESOLVED_TYPE_MAPPING,
@@ -9,6 +9,7 @@ import {
     SCHEDULE_TYPE_TO_LABELS,
     UEK_TIME_ZONE
 } from '$lib/consts';
+import { getDateFromLocalParts } from '$lib/dateUtils';
 
 // amazing name do not change
 export const superParseInt = (value?: string) => {
@@ -39,45 +40,53 @@ export const resolveScheduleItemType = (type: string) => {
     return null;
 };
 
-export const extendAggregateSchedule = (aggregateSchedule: AggregateSchedule, now: Date) => {
-    const hourRangeLabelFormatter = new Intl.DateTimeFormat(languageTag(), {
-        timeZone: UEK_TIME_ZONE,
-        hour: 'numeric',
-        minute: 'numeric'
+export const getRelativeTimeLabel = (() => {
+    const relativeTimeLabelFormatter = new Intl.RelativeTimeFormat(languageTag(), {
+        numeric: 'auto',
+        style: 'long'
     });
+
+    return (date: Date, now: Date) => {
+        const seconds = Math.floor((date.getTime() - now.getTime()) / 1000);
+        const secondsAbs = Math.abs(seconds);
+
+        if (secondsAbs < 60) {
+            return relativeTimeLabelFormatter.format(seconds, 'seconds');
+        }
+        if (secondsAbs < 3600) {
+            return relativeTimeLabelFormatter.format(Math.floor(seconds / 60), 'minutes');
+        }
+        if (secondsAbs < 86400) {
+            return relativeTimeLabelFormatter.format(Math.floor(seconds / 3600), 'hours');
+        }
+        if (secondsAbs < 2592000) {
+            return relativeTimeLabelFormatter.format(Math.floor(seconds / 86400), 'days');
+        }
+        if (secondsAbs < 31536000) {
+            return relativeTimeLabelFormatter.format(Math.floor(seconds / 2592000), 'months');
+        }
+        return relativeTimeLabelFormatter.format(Math.floor(seconds / 31536000), 'years');
+    };
+})();
+
+export const extendAggregateSchedule = (aggregateSchedule: AggregateSchedule, now: Date) => {
     const periodOptionDateFormatter = new Intl.DateTimeFormat(languageTag(), {
         timeZone: UEK_TIME_ZONE,
         dateStyle: 'medium'
     });
 
-    const getRelativeTimeLabel = (() => {
-        const relativeTimeLabelFormatter = new Intl.RelativeTimeFormat(languageTag(), {
-            numeric: 'auto',
-            style: 'long'
-        });
-
-        return (date: Date) => {
-            const seconds = Math.floor((date.getTime() - now.getTime()) / 1000);
-            const secondsAbs = Math.abs(seconds);
-
-            if (secondsAbs < 60) {
-                return relativeTimeLabelFormatter.format(seconds, 'seconds');
+    const hourRangeLabelFormatter = new Intl.DateTimeFormat(languageTag(), {
+        timeZone: UEK_TIME_ZONE,
+        hour: 'numeric',
+        minute: 'numeric'
+    });
+    const getHourRangeLabel = (startDate: Date, endDate: Date) => {
+        return `${hourRangeLabelFormatter.formatRange(startDate, endDate)} (${m.scheduleItemTimeAmount(
+            {
+                hours: Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 45))
             }
-            if (secondsAbs < 3600) {
-                return relativeTimeLabelFormatter.format(Math.floor(seconds / 60), 'minutes');
-            }
-            if (secondsAbs < 86400) {
-                return relativeTimeLabelFormatter.format(Math.floor(seconds / 3600), 'hours');
-            }
-            if (secondsAbs < 2592000) {
-                return relativeTimeLabelFormatter.format(Math.floor(seconds / 86400), 'days');
-            }
-            if (secondsAbs < 31536000) {
-                return relativeTimeLabelFormatter.format(Math.floor(seconds / 2592000), 'months');
-            }
-            return relativeTimeLabelFormatter.format(Math.floor(seconds / 31536000), 'years');
-        };
-    })();
+        )})`;
+    };
 
     let upcomingEncountered = false;
     return {
@@ -88,8 +97,8 @@ export const extendAggregateSchedule = (aggregateSchedule: AggregateSchedule, no
         key: getAggregateScheduleKey(aggregateSchedule.headers),
         typeLabels: SCHEDULE_TYPE_TO_LABELS[aggregateSchedule.type],
         periodOptions: aggregateSchedule.periodOptions.map((periodOption) => {
-            const startDate = new Date(periodOption.start);
-            const endDate = new Date(periodOption.end);
+            const startDate = getDateFromLocalParts(periodOption.startParts);
+            const endDate = getDateFromLocalParts(periodOption.endParts);
 
             return {
                 ...periodOption,
@@ -100,8 +109,8 @@ export const extendAggregateSchedule = (aggregateSchedule: AggregateSchedule, no
             };
         }),
         items: aggregateSchedule.items.map((item) => {
-            const startDate = new Date(item.start);
-            const endDate = new Date(item.end);
+            const startDate = getDateFromLocalParts(item.startParts);
+            const endDate = getDateFromLocalParts(item.endParts);
             const isUpcoming = now < startDate;
             const isFirstUpcoming = isUpcoming && !upcomingEncountered;
             if (isUpcoming) {
@@ -117,15 +126,30 @@ export const extendAggregateSchedule = (aggregateSchedule: AggregateSchedule, no
                 isFirstUpcoming,
                 isInProgress: now >= startDate && now <= endDate,
                 isFinished: now > endDate,
-                hourRangeLabel: `${hourRangeLabelFormatter.formatRange(startDate, endDate)} (${m.scheduleItemTimeAmount(
-                    {
-                        hours: Math.round(
-                            (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 45)
-                        )
-                    }
-                )})`,
-                startDateRelativeTimeLabel: getRelativeTimeLabel(startDate)
+                hourRangeLabel: getHourRangeLabel(startDate, endDate)
             };
         })
     };
+};
+
+export const compareDateParts = (parts1: DateParts, parts2: DateParts) => {
+    for (let i = 0; i < 5; i++) {
+        if (parts1[i]! > parts2[i]!) {
+            return 1;
+        }
+
+        if (parts1[i]! < parts2[i]!) {
+            return -1;
+        }
+    }
+
+    return 0;
+};
+
+export const areDatePartsEqual = (parts1: DateParts, parts2: DateParts) => {
+    return parts1.every((parts1Value, i) => parts2[i] === parts1Value);
+};
+
+export const areDatePartsEqualWithoutTime = (parts1: DateParts, parts2: DateParts) => {
+    return parts1[0] === parts2[0] && parts1[1] === parts2[1] && parts1[2] === parts2[2];
 };

@@ -93,6 +93,7 @@
                             })}
                             target="_blank"
                             rel="noopener"
+                            data-no-translate
                         >
                             <img
                                 class="h-3 sm:h-4"
@@ -324,6 +325,7 @@
             title={header.name}
             target="_blank"
             rel="noopener"
+            data-no-translate
         >
             {header.name}
         </a>
