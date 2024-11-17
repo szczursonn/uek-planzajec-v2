@@ -84,7 +84,7 @@ const createSearchOnlyPickerConfig = ({
         options.length > 0
             ? [
                   {
-                      name: SEARCH_PARAM.PICKER.SEARCH,
+                      name: SEARCH_PARAM.PICKER.FILTER.SEARCH,
                       type: 'search',
                       placeholder
                   }
@@ -92,7 +92,7 @@ const createSearchOnlyPickerConfig = ({
             : [],
     getFilteredOptionGroups: (filters) => {
         const doesSearchPhraseMatch = createSearchPhraseChecker(
-            filters[SEARCH_PARAM.PICKER.SEARCH]
+            filters[SEARCH_PARAM.PICKER.FILTER.SEARCH]
         );
 
         const filteredOptions = options.filter((option) => doesSearchPhraseMatch(option.label));
@@ -177,7 +177,7 @@ const createGroupHeaderPickerConfig = (options: Options, grouping?: string): Pic
 
     if (options.length > 0) {
         filtersConfig.push({
-            name: SEARCH_PARAM.PICKER.SEARCH,
+            name: SEARCH_PARAM.PICKER.FILTER.SEARCH,
             type: 'search',
             placeholder: m.searchExamplePlaceholder({
                 value: options[Math.floor(options.length / 2)]!.label
@@ -200,7 +200,7 @@ const createGroupHeaderPickerConfig = (options: Options, grouping?: string): Pic
 
     if (stageModeFilterOptions.length > 0) {
         filtersConfig.push({
-            name: SEARCH_PARAM.PICKER.STAGE_MODE,
+            name: SEARCH_PARAM.PICKER.FILTER.STAGE_MODE,
             type: 'picklist',
             placeholder: m.studyStageModeSelectPlaceholder(),
             options: stageModeFilterOptions
@@ -221,7 +221,7 @@ const createGroupHeaderPickerConfig = (options: Options, grouping?: string): Pic
 
     if (yearSemesterFilterOptions.length > 0) {
         filtersConfig.push({
-            name: SEARCH_PARAM.PICKER.YEAR_SEMESTER,
+            name: SEARCH_PARAM.PICKER.FILTER.YEAR_SEMESTER,
             type: 'picklist',
             placeholder: m.yearSemesterSelectPlaceholder(),
             options: yearSemesterFilterOptions
@@ -231,7 +231,7 @@ const createGroupHeaderPickerConfig = (options: Options, grouping?: string): Pic
     if (uniqueLanguages.size > 0 && uniqueLanguageLevels.size > 0) {
         filtersConfig.push(
             {
-                name: SEARCH_PARAM.PICKER.LANGUAGE,
+                name: SEARCH_PARAM.PICKER.FILTER.LANGUAGE,
                 type: 'picklist',
                 placeholder: m.languageSelectPlaceholder(),
                 options: [...uniqueLanguages].sort().map((language) => ({
@@ -239,7 +239,7 @@ const createGroupHeaderPickerConfig = (options: Options, grouping?: string): Pic
                 }))
             },
             {
-                name: SEARCH_PARAM.PICKER.LANGUAGE_LEVEL,
+                name: SEARCH_PARAM.PICKER.FILTER.LANGUAGE_LEVEL,
                 type: 'picklist',
                 placeholder: m.languageLevelSelectPlaceholder(),
                 options: [...uniqueLanguageLevels].sort().map((languageLevel) => ({
@@ -251,10 +251,11 @@ const createGroupHeaderPickerConfig = (options: Options, grouping?: string): Pic
 
     const getFilteredOptionGroups: FilteredOptionGroupsProvider = (filters) => {
         const doesSearchPhraseMatch = createSearchPhraseChecker(
-            filters[SEARCH_PARAM.PICKER.SEARCH]
+            filters[SEARCH_PARAM.PICKER.FILTER.SEARCH]
         );
-        const [studyStage, studyMode] = filters[SEARCH_PARAM.PICKER.STAGE_MODE]?.split('_') ?? [];
-        const semester = superParseInt(filters[SEARCH_PARAM.PICKER.YEAR_SEMESTER]);
+        const [studyStage, studyMode] =
+            filters[SEARCH_PARAM.PICKER.FILTER.STAGE_MODE]?.split('_') ?? [];
+        const semester = superParseInt(filters[SEARCH_PARAM.PICKER.FILTER.YEAR_SEMESTER]);
 
         const filteredOptions = detailedOptions.filter(
             (option) =>
@@ -263,11 +264,11 @@ const createGroupHeaderPickerConfig = (options: Options, grouping?: string): Pic
                 !areValuesTruthyAndUnequal(studyStage, option.details.stage) &&
                 !areValuesTruthyAndUnequal(semester, option.details.semester) &&
                 !areValuesTruthyAndUnequal(
-                    filters[SEARCH_PARAM.PICKER.LANGUAGE],
+                    filters[SEARCH_PARAM.PICKER.FILTER.LANGUAGE],
                     option.details.language
                 ) &&
                 !areValuesTruthyAndUnequal(
-                    filters[SEARCH_PARAM.PICKER.LANGUAGE_LEVEL],
+                    filters[SEARCH_PARAM.PICKER.FILTER.LANGUAGE_LEVEL],
                     option.details.languageLevel
                 )
         );

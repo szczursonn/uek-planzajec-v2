@@ -1,28 +1,45 @@
+<script lang="ts" module>
+    const getCurrentFiltersFromSearchParams = () => {
+        const searchParams = browser
+            ? new URLSearchParams(window.location.search)
+            : getSyncStoreValue(page).url.searchParams;
+
+        const filters = {} as Record<string, string>;
+
+        for (const filterName of Object.values(SEARCH_PARAM.PICKER.FILTER)) {
+            filters[filterName] = searchParams.get(filterName) ?? '';
+        }
+
+        return filters;
+    };
+</script>
+
 <script lang="ts">
     import { onMount } from 'svelte';
     import { replaceState } from '$app/navigation';
     import { page } from '$app/stores';
+    import { browser } from '$app/environment';
     import * as m from '$lib/paraglide/messages';
     import { getGlobalContext } from '$lib/stores/globalContext';
     import { SCHEDULE_TYPE_TO_LABELS, SCHEDULE_TYPES, SEARCH_PARAM } from '$lib/consts';
     import { getPickerConfig } from '$lib/pickerConfig';
-    import { encodePickerState, getAggregateScheduleKey } from '$lib/storeUtils';
+    import { encodePickerState } from '$lib/storeUtils';
     import { createSchedulePickerURL, createScheduleURL } from '$lib/linkUtils';
+    import { getSyncStoreValue } from '$lib/utils';
     import NestableLinkList from '$lib/components/NestableLinkList.svelte';
     import Icon from '$lib/components/Icon.svelte';
     import PageMetadata from '$lib/components/PageMetadata.svelte';
     import Select from '$lib/components/form/Select.svelte';
     import TextInput from '$lib/components/form/TextInput.svelte';
     import Button from '$lib/components/form/Button.svelte';
-    const { data } = $props();
 
+    const { data } = $props();
     const { savedScheduleSetsStore } = getGlobalContext();
 
     const savedScheduleSetsOptions = $derived(
         data.pickerState || $page.params.grouping
             ? []
             : $savedScheduleSetsStore.ofType(data.scheduleType).map((savedScheduleSet) => ({
-                  key: getAggregateScheduleKey(savedScheduleSet),
                   label: savedScheduleSet.map((scheduleHeader) => scheduleHeader.name).join(', '),
                   href: createScheduleURL({
                       scheduleType: data.scheduleType,
@@ -38,6 +55,7 @@
             active: scheduleType === data.scheduleType
         }))
     );
+
     const options = $derived.by(() => {
         if (data.isHeader) {
             return data.headers.map((header) => ({
@@ -72,17 +90,14 @@
         })
     );
 
-    const filters = $state(
-        Object.fromEntries($page.url.searchParams.entries()) as Record<string, string>
-    );
-
+    const filters = $state(getCurrentFiltersFromSearchParams());
     const filteredOptionsGroups = $derived(getFilteredOptionGroups(filters));
 
-    const onChangeUpdateURL = $derived(
+    const updateURLOnChange = $derived(
         (
             event: Event & { currentTarget: EventTarget & (HTMLInputElement | HTMLSelectElement) }
         ) => {
-            const newURL = new URL($page.url);
+            const newURL = new URL(window.location.href);
             if (event.currentTarget.value) {
                 newURL.searchParams.set(event.currentTarget.name, event.currentTarget.value);
             } else {
@@ -94,19 +109,11 @@
 
     // clear filters on navigation
     onMount(() => {
-        let lastPathname: string | undefined;
-        const unsubscribePageStore = page.subscribe(() => {
-            if (lastPathname !== undefined && window.location.pathname !== lastPathname) {
-                Object.keys(filters).forEach((key) => (filters[key] = ''));
-                new URLSearchParams(window.location.search)
-                    .entries()
-                    .forEach(([key, value]) => (filters[key] = value));
+        return page.subscribe(() => {
+            for (const [filterName, value] of Object.entries(getCurrentFiltersFromSearchParams())) {
+                filters[filterName] = value;
             }
-
-            lastPathname = window.location.pathname;
         });
-
-        return unsubscribePageStore;
     });
 </script>
 
@@ -207,7 +214,7 @@
                     type="search"
                     placeholder={config.placeholder}
                     bind:value={filters[config.name]}
-                    onchange={onChangeUpdateURL}
+                    onchange={updateURLOnChange}
                 />
             {:else}
                 <Select
@@ -217,7 +224,7 @@
                     options={config.options}
                     bind:value={filters[config.name]}
                     class="grow basis-[51%] md:basis-[34%] xl:basis-[21%]"
-                    onchange={onChangeUpdateURL}
+                    onchange={updateURLOnChange}
                 />
             {/if}
         {/each}
@@ -243,14 +250,7 @@
                     title={m.clearFilters()}
                     onclick={(e) => {
                         e.preventDefault();
-
-                        const newURL = new URL($page.url);
-                        Object.keys(filters).forEach((key) => {
-                            filters[key] = '';
-                            newURL.searchParams.delete(key);
-                        });
-
-                        replaceState(newURL, {});
+                        replaceState(e.currentTarget.href, {});
                     }}
                 >
                     {m.clearFilters()}

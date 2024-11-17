@@ -1,3 +1,4 @@
+import type { Subscriber, Unsubscriber } from 'svelte/store';
 import { languageTag } from '$lib/paraglide/runtime';
 import * as m from '$lib/paraglide/messages';
 import { getAggregateScheduleKey } from '$lib/storeUtils';
@@ -152,4 +153,18 @@ export const areDatePartsEqual = (parts1: DateParts, parts2: DateParts) => {
 
 export const areDatePartsEqualWithoutTime = (parts1: DateParts, parts2: DateParts) => {
     return parts1[0] === parts2[0] && parts1[1] === parts2[1] && parts1[2] === parts2[2];
+};
+
+export const getSyncStoreValue = <T>({
+    subscribe
+}: {
+    subscribe: (callback: Subscriber<T>) => Unsubscriber;
+}) => {
+    let value: T;
+    const unsubscribe = subscribe((storeValue: T) => {
+        value = storeValue;
+        setTimeout(() => unsubscribe(), 0);
+    });
+
+    return value! as T;
 };

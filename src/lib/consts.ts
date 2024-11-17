@@ -82,11 +82,13 @@ export const COOKIE = {
 export const SEARCH_PARAM = {
     PICKER: {
         STATE: 'state',
-        SEARCH: 'q',
-        STAGE_MODE: 'stageMode',
-        YEAR_SEMESTER: 'yearSemester',
-        LANGUAGE: 'lang',
-        LANGUAGE_LEVEL: 'langLevel'
+        FILTER: {
+            SEARCH: 'q',
+            STAGE_MODE: 'stageMode',
+            YEAR_SEMESTER: 'yearSemester',
+            LANGUAGE: 'lang',
+            LANGUAGE_LEVEL: 'langLevel'
+        }
     },
     SCHEDULE: {
         PERIOD: 'period',
