@@ -1,4 +1,4 @@
-import { createUEKService } from '$lib/server/uekService';
+import { getScheduleGroupings, getScheduleHeaders } from '$lib/server/uekService';
 import { readPickerState } from '$lib/server/serverUtils';
 import type { ScheduleHeader, ScheduleType } from '$lib/types';
 import { DEFAULT_SCHEDULE_TYPE, LOAD_FN_PERFORMANCE_HEADER } from '$lib/consts';
@@ -10,13 +10,12 @@ export const load = async (ctx) => {
     // ctx.params.type already validated by matcher
     const scheduleType = (ctx.params.type ?? DEFAULT_SCHEDULE_TYPE) as ScheduleType;
     const pickerState = readPickerState(ctx);
-    const uekService = createUEKService(ctx.platform);
 
     let pageData:
         | { isHeader: true; headers: ScheduleHeader[] }
         | { isHeader: false; groupings: string[] };
     if (ctx.params.grouping || scheduleType === 'lecturer') {
-        const headers = await uekService.getScheduleHeaders({
+        const headers = await getScheduleHeaders({
             scheduleType,
             grouping: ctx.params.grouping
         });
@@ -37,7 +36,7 @@ export const load = async (ctx) => {
                 })
         };
     } else {
-        const groupings = await uekService.getScheduleGroupings();
+        const groupings = await getScheduleGroupings();
 
         pageData = {
             isHeader: false,

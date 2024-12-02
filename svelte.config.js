@@ -1,14 +1,11 @@
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
-import cloudflareAdapter from '@sveltejs/adapter-cloudflare';
+import nodeAdapter from '@sveltejs/adapter-node';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
     preprocess: vitePreprocess(),
     kit: {
-        adapter: cloudflareAdapter(),
-        prerender: {
-            origin: 'https://uek-planzajec-v2.pages.dev'
-        }
+        adapter: nodeAdapter()
     }
 };
 

@@ -11,19 +11,11 @@
 ✅ Multiple nice looking schedules views  
 ✅ 100% of functionality works without JS
 ✅ Works without cookie consent
-✅ Multiple languages (pl/en) with internationalised urls  
-✅ Caching on Cloudflare for performance (+to avoid ddosing UEK)
+✅ Multiple languages (pl/en) with internationalised urls
 
 [V1](https://github.com/szczursonn/uek-planzajec) with NextJS Page Router
 
 ## Technical details
-
-### Cloudflare Pages Config
-
-These are required for the build to succeed
-
-1. Bump node version to at least 20
-2. Enable compatibility flag on project: nodejs_compat_v2
 
 ### Cookies
 

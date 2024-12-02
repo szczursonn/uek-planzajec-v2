@@ -16,11 +16,6 @@ import {
     SCHEDULE_TYPE_ORIGINAL_TO_NORMALIZED
 } from '$lib/consts';
 
-const CACHE_MAX_AGE_SECONDS = {
-    GROUPINGS: 60 * 30, // 30m
-    HEADERS: 60 * 30, // 30m
-    SCHEDULE: 60 * 10 // 10m
-} as const;
 const USER_AGENT =
     'Mozilla/5.0 (compatible; uek-planzajec-v2/1.0; +https://uek-planzajec-v2.pages.dev/)';
 
@@ -41,47 +36,21 @@ const xmlParser = new XMLParser({
 
 const hourRegex = /^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]/;
 
-const createXMLFetcher =
-    (platform?: App.Platform) =>
-    async ({
-        url,
-        cacheKey,
-        cacheMaxAgeSeconds
-    }: {
-        url: URL;
-        cacheKey?: string;
-        cacheMaxAgeSeconds: number;
-    }) => {
-        const cacheUrl = new URL(url);
-        if (cacheKey) {
-            cacheUrl.searchParams.set('cachekey', cacheKey);
+const fetchXML = async ({ url }: { url: URL }) => {
+    const response = await fetch(url, {
+        headers: {
+            'User-Agent': USER_AGENT
         }
+    });
 
-        let response = await platform?.caches.default.match(cacheUrl);
-        console.log(`[CACHE ${response ? 'HIT' : 'MISS'}] (${cacheUrl})`);
+    if (!response.ok) {
+        throw new Error(
+            `Server responded with non-200 response: ${response.status} ${response.statusText}`
+        );
+    }
 
-        if (!response) {
-            response = await fetch(url, {
-                headers: {
-                    'User-Agent': USER_AGENT
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error(
-                    `Server responded with non-200 response: ${response.status} ${response.statusText}`
-                );
-            }
-
-            if (platform) {
-                response = new Response(response.body, response);
-                response.headers.set('Cache-Control', `s-maxage=${cacheMaxAgeSeconds}`);
-                platform.context.waitUntil(platform.caches.default.put(cacheUrl, response.clone()));
-            }
-        }
-
-        return xmlParser.parse(await response.text()) as unknown;
-    };
+    return xmlParser.parse(await response.text()) as unknown;
+};
 
 const getUEKDateParts = (dateString: string, timeString: string) => {
     const dateStringParts = dateString.split('-').map((part) => parseInt(part));
@@ -387,71 +356,59 @@ const processScheduleResponses = ({
         .pipe(aggregateScheduleSchema)
         .parse(xmlResponses);
 
-export const createUEKService = (platform?: App.Platform) => {
-    const fetchXML = createXMLFetcher(platform);
+export const getScheduleGroupings = async () => {
+    return parseScheduleGroupingsResponse(
+        await fetchXML({
+            url: createOriginalURL({
+                xml: true
+            })
+        })
+    );
+};
 
-    return {
-        async getScheduleGroupings() {
-            return parseScheduleGroupingsResponse(
-                await fetchXML({
-                    url: createOriginalURL({
-                        xml: true
-                    }),
-                    cacheMaxAgeSeconds: CACHE_MAX_AGE_SECONDS.GROUPINGS
-                })
-            );
-        },
-        async getScheduleHeaders({
-            scheduleType,
-            grouping
-        }: {
-            scheduleType: ScheduleType;
-            grouping?: string;
-        }) {
-            return parseScheduleHeadersResponse(
-                await fetchXML({
+export const getScheduleHeaders = async ({
+    scheduleType,
+    grouping
+}: {
+    scheduleType: ScheduleType;
+    grouping?: string;
+}) => {
+    return parseScheduleHeadersResponse(
+        await fetchXML({
+            url: createOriginalURL({
+                scheduleType,
+                grouping,
+                xml: true
+            })
+        })
+    );
+};
+
+export const getAggregateSchedule = async ({
+    scheduleIds,
+    scheduleType,
+    schedulePeriod,
+    now
+}: {
+    scheduleIds: string[];
+    scheduleType: ScheduleType;
+    schedulePeriod: SchedulePeriod;
+    now: Date;
+}) => {
+    return processScheduleResponses({
+        xmlResponses: await Promise.all(
+            scheduleIds.map((scheduleId) =>
+                fetchXML({
                     url: createOriginalURL({
                         scheduleType,
-                        grouping,
+                        scheduleId,
+                        schedulePeriod,
                         xml: true
-                    }),
-                    cacheMaxAgeSeconds: CACHE_MAX_AGE_SECONDS.HEADERS
+                    })
                 })
-            );
-        },
-        async getAggregateSchedule({
-            scheduleIds,
-            scheduleType,
-            schedulePeriod,
-            now
-        }: {
-            scheduleIds: string[];
-            scheduleType: ScheduleType;
-            schedulePeriod: SchedulePeriod;
-            now: Date;
-        }) {
-            const nowParts = getLocalDateParts(now);
-            // prevents scenario in which one of the schedules is cached from previous day and another one is fresh
-            const sameDayCacheKey = [nowParts[0], nowParts[1], nowParts[2]].join('.');
-
-            return processScheduleResponses({
-                xmlResponses: await Promise.all(
-                    scheduleIds.map((scheduleId) =>
-                        fetchXML({
-                            url: createOriginalURL({
-                                scheduleType,
-                                scheduleId,
-                                schedulePeriod,
-                                xml: true
-                            }),
-                            cacheMaxAgeSeconds: CACHE_MAX_AGE_SECONDS.SCHEDULE,
-                            cacheKey: sameDayCacheKey
-                        })
-                    )
-                ),
-                selectedSchedulePeriod: schedulePeriod,
-                now
-            });
-        }
-    };
+            )
+        ),
+        selectedSchedulePeriod: schedulePeriod,
+        now
+    });
 };

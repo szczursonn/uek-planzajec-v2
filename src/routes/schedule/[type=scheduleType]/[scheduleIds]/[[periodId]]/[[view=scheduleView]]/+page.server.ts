@@ -1,6 +1,6 @@
 import { error, redirect, type RequestEvent } from '@sveltejs/kit';
 import { z } from 'zod';
-import { createUEKService } from '$lib/server/uekService';
+import { getAggregateSchedule } from '$lib/server/uekService';
 import {
     areCookiesEnabled,
     assertCookiesAreEnabled,
@@ -51,7 +51,7 @@ export const load = async (ctx) => {
 
     const pageParams = pageParamsSchema.parse(ctx.params);
 
-    const aggregateSchedule = await createUEKService(ctx.platform).getAggregateSchedule({
+    const aggregateSchedule = await getAggregateSchedule({
         scheduleIds: pageParams.scheduleIds,
         scheduleType: pageParams.type,
         schedulePeriod: pageParams.periodId,

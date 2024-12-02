@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { z } from 'zod';
 import ical, { ICalEventStatus } from 'ical-generator';
-import { createUEKService } from '$lib/server/uekService';
+import { getAggregateSchedule } from '$lib/server/uekService';
 import { scheduleIdSchema, scheduleTypeSchema } from '$lib/server/schema';
 import { MAX_SELECTABLE_SCHEDULES } from '$lib/consts';
 import { resolveScheduleItemType } from '$lib/utils';
@@ -22,7 +22,7 @@ export const GET = async (ctx) => {
         error(400);
     }
 
-    const aggregateSchedule = await createUEKService(ctx.platform).getAggregateSchedule({
+    const aggregateSchedule = await getAggregateSchedule({
         scheduleIds: paramsParseResult.data.scheduleIds,
         scheduleType: paramsParseResult.data.type,
         schedulePeriod: 'currentYear',
