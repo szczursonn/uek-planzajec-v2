@@ -6,6 +6,11 @@ WORKDIR /usr/src/app
 # Copy source code
 COPY . .
 
+# Install git (necessary for build)
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y git
+
 # Install app dependencies
 RUN npm install
 
