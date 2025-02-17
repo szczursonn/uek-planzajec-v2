@@ -50,11 +50,11 @@ export const SCHEDULE_PERIOD_TO_CONFIG = {
     },
     currentYear: {
         label: m.periodOptionFullYear,
-        originalId: 3
+        originalId: 4
     },
     previousYear: {
         label: m.periodOptionPastYear,
-        originalId: 4
+        originalId: 5
     }
 } as const satisfies Record<SchedulePeriod, unknown>;
 
