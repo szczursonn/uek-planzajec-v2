@@ -17,6 +17,12 @@ import {
     SCHEDULE_PERIODS,
     SCHEDULE_TYPE_ORIGINAL_TO_NORMALIZED
 } from '$lib/consts';
+import {
+    uekCacheHitCounter,
+    uekCacheMissCounter,
+    uekFetchLatencyHistogram,
+    uekRateLimiterLatencyHistogram
+} from '$lib/prometheus';
 
 const xmlCache = new NodeCache({
     stdTTL: 60 * 5,
@@ -24,7 +30,7 @@ const xmlCache = new NodeCache({
 });
 
 const selfRateLimiter = new Bottleneck({
-    maxConcurrent: 6
+    maxConcurrent: 3
 });
 
 const USER_AGENT =
@@ -47,15 +53,13 @@ const xmlParser = new XMLParser({
 
 const hourRegex = /^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]/;
 
-const logFetch = (url: URL, msg: string) =>
-    console.log(`[${new Date().toISOString()}] [uekService] [${url}] ${msg}`);
-
 const fetchXML = async ({ url }: { url: URL }) => {
     const cachedXMLResponse = xmlCache.get(url.toString());
     if (cachedXMLResponse) {
-        logFetch(url, 'Cache hit');
+        uekCacheHitCounter.labels(url.toString()).inc();
         return cachedXMLResponse;
     }
+    uekCacheMissCounter.labels(url.toString()).inc();
 
     const startTimestamp = Date.now();
     let rateLimiterEndTimestamp: number;
@@ -69,10 +73,10 @@ const fetchXML = async ({ url }: { url: URL }) => {
     });
     const endTimestamp = Date.now();
 
-    logFetch(
-        url,
-        `Fetch took ${endTimestamp - startTimestamp}ms (${rateLimiterEndTimestamp! - startTimestamp}ms rate limit)`
-    );
+    uekFetchLatencyHistogram
+        .labels(url.toString())
+        .observe(endTimestamp - rateLimiterEndTimestamp!);
+    uekRateLimiterLatencyHistogram.observe(rateLimiterEndTimestamp! - startTimestamp);
 
     if (!response.ok) {
         throw new Error(
