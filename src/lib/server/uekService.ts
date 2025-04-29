@@ -1,5 +1,7 @@
 import { XMLParser } from 'fast-xml-parser';
 import { z } from 'zod';
+import NodeCache from 'node-cache';
+import Bottleneck from 'bottleneck';
 import {
     scheduleGroupingSchema,
     scheduleHeaderSchema,
@@ -16,8 +18,17 @@ import {
     SCHEDULE_TYPE_ORIGINAL_TO_NORMALIZED
 } from '$lib/consts';
 
+const xmlCache = new NodeCache({
+    stdTTL: 60 * 5,
+    checkperiod: 60 * 5 * 2
+});
+
+const selfRateLimiter = new Bottleneck({
+    maxConcurrent: 6
+});
+
 const USER_AGENT =
-    'Mozilla/5.0 (compatible; uek-planzajec-v2/1.0; +https://uek-planzajec-v2.pages.dev/)';
+    'Mozilla/5.0 (compatible; uek-planzajec-v2/1.0; +https://uek-planzajec-v2.fly.dev/)';
 
 const xmlParser = new XMLParser({
     ignoreAttributes: false,
@@ -36,12 +47,32 @@ const xmlParser = new XMLParser({
 
 const hourRegex = /^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]/;
 
+const logFetch = (url: URL, msg: string) =>
+    console.log(`[${new Date().toISOString()}] [uekService] [${url}] ${msg}`);
+
 const fetchXML = async ({ url }: { url: URL }) => {
-    const response = await fetch(url, {
-        headers: {
-            'User-Agent': USER_AGENT
-        }
+    const cachedXMLResponse = xmlCache.get(url.toString());
+    if (cachedXMLResponse) {
+        logFetch(url, 'Cache hit');
+        return cachedXMLResponse;
+    }
+
+    const startTimestamp = Date.now();
+    let rateLimiterEndTimestamp: number;
+    const response = await selfRateLimiter.schedule(() => {
+        rateLimiterEndTimestamp = Date.now();
+        return fetch(url, {
+            headers: {
+                'User-Agent': USER_AGENT
+            }
+        });
     });
+    const endTimestamp = Date.now();
+
+    logFetch(
+        url,
+        `Fetch took ${endTimestamp - startTimestamp}ms (${rateLimiterEndTimestamp! - startTimestamp}ms rate limit)`
+    );
 
     if (!response.ok) {
         throw new Error(
@@ -49,7 +80,10 @@ const fetchXML = async ({ url }: { url: URL }) => {
         );
     }
 
-    return xmlParser.parse(await response.text()) as unknown;
+    const xmlResponse = xmlParser.parse(await response.text()) as unknown;
+    xmlCache.set(url.toString(), xmlResponse);
+
+    return xmlResponse;
 };
 
 const getUEKDateParts = (dateString: string, timeString: string) => {
