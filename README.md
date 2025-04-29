@@ -1,6 +1,8 @@
-# [UEK - plan zajęć](https://uek-planzajec-v2.pages.dev/)
+# [UEK - plan zajęć](https://uek-planzajec-v2.fly.dev/)
 
 **Wrapper around official [UEK Plan Zajęć](https://planzajec.uek.krakow.pl) with nice new features**
+
+**Superseded by [uek-planzajec-v3](https://github.com/szczursonn/uek-planzajec-v3)**
 
 | Desktop                                            | Mobile                                            |
 | -------------------------------------------------- | ------------------------------------------------- |
