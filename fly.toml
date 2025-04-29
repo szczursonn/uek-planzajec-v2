@@ -13,5 +13,5 @@ processes = [ "app" ]
 size = "shared-cpu-1x"
 
 [metrics]
-port = 443
+port = 3_000
 path = "/metrics"

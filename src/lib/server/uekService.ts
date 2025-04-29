@@ -24,7 +24,7 @@ import {
     uekRateLimiterLatencyHistogram
 } from '$lib/prometheus';
 
-const xmlCache = new NodeCache({
+const memCache = new NodeCache({
     stdTTL: 60 * 5,
     checkperiod: 60 * 5 * 2
 });
@@ -53,14 +53,7 @@ const xmlParser = new XMLParser({
 
 const hourRegex = /^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]/;
 
-const fetchXML = async ({ url }: { url: URL }) => {
-    const cachedXMLResponse = xmlCache.get(url.toString());
-    if (cachedXMLResponse) {
-        uekCacheHitCounter.labels(url.toString()).inc();
-        return cachedXMLResponse;
-    }
-    uekCacheMissCounter.labels(url.toString()).inc();
-
+const fetchXML = async ({ url, metricsRouteType }: { url: URL; metricsRouteType: string }) => {
     const startTimestamp = Date.now();
     let rateLimiterEndTimestamp: number;
     const response = await selfRateLimiter.schedule(() => {
@@ -74,7 +67,7 @@ const fetchXML = async ({ url }: { url: URL }) => {
     const endTimestamp = Date.now();
 
     uekFetchLatencyHistogram
-        .labels(url.toString())
+        .labels(metricsRouteType)
         .observe(endTimestamp - rateLimiterEndTimestamp!);
     uekRateLimiterLatencyHistogram.observe(rateLimiterEndTimestamp! - startTimestamp);
 
@@ -84,10 +77,7 @@ const fetchXML = async ({ url }: { url: URL }) => {
         );
     }
 
-    const xmlResponse = xmlParser.parse(await response.text()) as unknown;
-    xmlCache.set(url.toString(), xmlResponse);
-
-    return xmlResponse;
+    return xmlParser.parse(await response.text()) as unknown;
 };
 
 const getUEKDateParts = (dateString: string, timeString: string) => {
@@ -394,14 +384,33 @@ const processScheduleResponses = ({
         .pipe(aggregateScheduleSchema)
         .parse(xmlResponses);
 
+const METRICS_ROUTE_TYPE_LABEL = {
+    GROUPINGS: 'groupings',
+    HEADERS: 'headers',
+    SCHEDULE: 'schedule'
+} as const;
+
 export const getScheduleGroupings = async () => {
-    return parseScheduleGroupingsResponse(
+    const cacheKey = 'groupings';
+    const cachedValue = memCache.get(cacheKey);
+
+    if (cachedValue) {
+        uekCacheHitCounter.labels(METRICS_ROUTE_TYPE_LABEL.GROUPINGS).inc();
+        return cachedValue as ReturnType<typeof parseScheduleGroupingsResponse>;
+    }
+    uekCacheMissCounter.labels(METRICS_ROUTE_TYPE_LABEL.GROUPINGS).inc();
+
+    const freshValue = parseScheduleGroupingsResponse(
         await fetchXML({
             url: createOriginalURL({
                 xml: true
-            })
+            }),
+            metricsRouteType: METRICS_ROUTE_TYPE_LABEL.GROUPINGS
         })
     );
+    memCache.set(cacheKey, freshValue);
+
+    return freshValue;
 };
 
 export const getScheduleHeaders = async ({
@@ -411,15 +420,28 @@ export const getScheduleHeaders = async ({
     scheduleType: ScheduleType;
     grouping?: string;
 }) => {
-    return parseScheduleHeadersResponse(
+    const cacheKey = ['headers', scheduleType, grouping].join();
+    const cachedValue = memCache.get(cacheKey);
+
+    if (cachedValue) {
+        uekCacheHitCounter.labels(METRICS_ROUTE_TYPE_LABEL.HEADERS).inc();
+        return cachedValue as ReturnType<typeof parseScheduleHeadersResponse>;
+    }
+    uekCacheMissCounter.labels(METRICS_ROUTE_TYPE_LABEL.HEADERS).inc();
+
+    const freshValue = parseScheduleHeadersResponse(
         await fetchXML({
             url: createOriginalURL({
                 scheduleType,
                 grouping,
                 xml: true
-            })
+            }),
+            metricsRouteType: METRICS_ROUTE_TYPE_LABEL.HEADERS
         })
     );
+    memCache.set(cacheKey, freshValue);
+
+    return freshValue;
 };
 
 export const getAggregateSchedule = async ({
@@ -433,19 +455,34 @@ export const getAggregateSchedule = async ({
     schedulePeriod: SchedulePeriod;
     now: Date;
 }) => {
+    const xmlResponses = await Promise.all(
+        scheduleIds.map(async (scheduleId) => {
+            const cacheKey = ['schedule', scheduleId, scheduleType, schedulePeriod].join();
+            const cachedValue = memCache.get(cacheKey);
+
+            if (cachedValue) {
+                uekCacheHitCounter.labels(METRICS_ROUTE_TYPE_LABEL.HEADERS).inc();
+                return cachedValue;
+            }
+            uekCacheMissCounter.labels(METRICS_ROUTE_TYPE_LABEL.HEADERS).inc();
+
+            const xmlResponse = await fetchXML({
+                url: createOriginalURL({
+                    scheduleType,
+                    scheduleId,
+                    schedulePeriod,
+                    xml: true
+                }),
+                metricsRouteType: METRICS_ROUTE_TYPE_LABEL.SCHEDULE
+            });
+            memCache.set(cacheKey, xmlResponse);
+
+            return xmlResponse;
+        })
+    );
+
     return processScheduleResponses({
-        xmlResponses: await Promise.all(
-            scheduleIds.map((scheduleId) =>
-                fetchXML({
-                    url: createOriginalURL({
-                        scheduleType,
-                        scheduleId,
-                        schedulePeriod,
-                        xml: true
-                    })
-                })
-            )
-        ),
+        xmlResponses,
         selectedSchedulePeriod: schedulePeriod,
         now
     });

@@ -8,30 +8,30 @@ collectDefaultMetrics({
 });
 
 export const uekCacheHitCounter = new Counter({
-    name: 'uek_cache_hit',
+    name: 'uekpz2_custom_cache_hit',
     help: 'Cache Hits against UEK',
-    labelNames: ['route']
+    labelNames: ['routeType']
 });
 register.registerMetric(uekCacheHitCounter);
 
 export const uekCacheMissCounter = new Counter({
-    name: 'uek_cache_miss',
+    name: 'uekpz2_custom_cache_miss',
     help: 'Cache Misses against UEK',
-    labelNames: ['route']
+    labelNames: ['routeType']
 });
 register.registerMetric(uekCacheMissCounter);
 
 export const uekFetchLatencyHistogram = new Histogram({
-    name: 'uek_fetch_latency_ms',
+    name: 'uekpz2_custom_fetch_latency_ms',
     help: 'Duration of HTTP requests to UEK in milliseconds',
-    labelNames: ['route'],
-    buckets: [50, 75, 100, 125, 150, 175, 200, 300, 500, 1000]
+    labelNames: ['routeType'],
+    buckets: [50, 75, 100, 125, 150, 175, 200, 300, 500, 1000, 1500]
 });
 register.registerMetric(uekFetchLatencyHistogram);
 
 export const uekRateLimiterLatencyHistogram = new Histogram({
-    name: 'uek_ratelimit_latency_ms',
+    name: 'uekpz2_custom_ratelimit_latency_ms',
     help: 'Duration of self rate limit in milliseconds',
-    buckets: [50, 75, 100, 125, 150, 175, 200, 300, 500, 1000]
+    buckets: [10, 25, 50, 75, 100, 125, 150, 200, 300, 500, 1000, 2000, 5000]
 });
 register.registerMetric(uekRateLimiterLatencyHistogram);
