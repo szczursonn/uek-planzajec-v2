@@ -461,10 +461,10 @@ export const getAggregateSchedule = async ({
             const cachedValue = memCache.get(cacheKey);
 
             if (cachedValue) {
-                uekCacheHitCounter.labels(METRICS_ROUTE_TYPE_LABEL.HEADERS).inc();
+                uekCacheHitCounter.labels(METRICS_ROUTE_TYPE_LABEL.SCHEDULE).inc();
                 return cachedValue;
             }
-            uekCacheMissCounter.labels(METRICS_ROUTE_TYPE_LABEL.HEADERS).inc();
+            uekCacheMissCounter.labels(METRICS_ROUTE_TYPE_LABEL.SCHEDULE).inc();
 
             const xmlResponse = await fetchXML({
                 url: createOriginalURL({
